@@ -1,0 +1,79 @@
+# ─── Bonus A — Docker Compose ─────────────────────────────────────────────────
+# Services: telco-serving (FastAPI) + mlflow-server
+# All inter-service communication uses Docker internal service names (not localhost)
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: "3.9"
+
+services:
+
+  # ── MLflow Tracking Server ──────────────────────────────────────────────────
+  mlflow-server:
+    image: python:3.11.9-slim
+    container_name: mlflow-server
+    working_dir: /app
+    volumes:
+      - ./mlartifacts:/app/mlartifacts
+      - mlflow-db:/app/db
+    ports:
+      - "5000:5000"
+    command: >
+      bash -c "pip install mlflow==2.13.0 --quiet &&
+               mlflow server
+               --backend-store-uri sqlite:////app/db/mlflow.db
+               --default-artifact-root /app/mlartifacts
+               --host 0.0.0.0
+               --port 5000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mlops-net
+
+  # ── FastAPI Serving Application ─────────────────────────────────────────────
+  telco-serving:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: telco-serving
+    ports:
+      - "8000:8000"
+      - "8001:8001"   # Prometheus metrics port
+    environment:
+      # Override MLflow URI to use the internal Docker service name
+      MLFLOW_TRACKING_URI: http://mlflow-server:5000
+    volumes:
+      - ./configs:/app/configs:ro
+      - ./mlartifacts:/app/mlartifacts:ro
+    depends_on:
+      mlflow-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mlops-net
+
+  # ── Prometheus (optional scraper) ───────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - telco-serving
+    networks:
+      - mlops-net
+
+networks:
+  mlops-net:
+    driver: bridge
+
+volumes:
+  mlflow-db:

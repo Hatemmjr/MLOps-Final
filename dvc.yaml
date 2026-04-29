@@ -1,0 +1,46 @@
+stages:
+
+  prepare:
+    cmd: python src/data/prepare.py
+    deps:
+      - src/data/prepare.py
+      - configs/params.yaml
+    params:
+      - configs/params.yaml:
+          - data.raw_path
+          - data.target_column
+          - data.drop_columns
+          - data.random_seed
+    outs:
+      - data/processed/telco_churn_clean.csv
+
+  preprocess:
+    cmd: python src/data/preprocess.py
+    deps:
+      - src/data/preprocess.py
+      - data/processed/telco_churn_clean.csv
+      - configs/params.yaml
+    params:
+      - configs/params.yaml:
+          - preprocessing
+          - data.target_column
+          - data.random_seed
+    outs:
+      - data/processed/preprocessing_pipeline.joblib
+
+  featurize:
+    cmd: python src/features/featurize.py
+    deps:
+      - src/features/featurize.py
+      - data/processed/telco_churn_clean.csv
+      - data/processed/preprocessing_pipeline.joblib
+      - configs/params.yaml
+    params:
+      - configs/params.yaml:
+          - data
+          - preprocessing
+    outs:
+      - data/splits/train.csv
+      - data/splits/test.csv
+      - data/splits/reference.csv
+      - data/splits/production.csv
