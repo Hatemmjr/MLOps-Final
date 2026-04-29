@@ -1,0 +1,156 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python src/data/prepare.py
+    deps:
+    - path: configs/params.yaml
+      hash: md5
+      md5: f14bbd309bdcfc4b0d3511a4af6dead6
+      size: 3013
+    - path: src/data/prepare.py
+      hash: md5
+      md5: 6c5173f6b51a01b61fcd7967d8c02336
+      size: 4526
+    params:
+      configs/params.yaml:
+        data.drop_columns: []
+        data.random_seed: 42
+        data.raw_path: data/raw/telco_churn.csv
+        data.target_column: Churn
+    outs:
+    - path: data/processed/telco_churn_clean.csv
+      hash: md5
+      md5: 271d21bb139e99eb31c00e2aee35e70e
+      size: 962966
+  preprocess:
+    cmd: python src/data/preprocess.py
+    deps:
+    - path: configs/params.yaml
+      hash: md5
+      md5: f14bbd309bdcfc4b0d3511a4af6dead6
+      size: 3013
+    - path: data/processed/telco_churn_clean.csv
+      hash: md5
+      md5: 271d21bb139e99eb31c00e2aee35e70e
+      size: 962966
+    - path: src/data/preprocess.py
+      hash: md5
+      md5: 5fd543d4254214e1b387b33479f2509b
+      size: 3897
+    params:
+      configs/params.yaml:
+        data.random_seed: 42
+        data.target_column: Churn
+        preprocessing:
+          pipeline_artifact: data/processed/preprocessing_pipeline.joblib
+          numeric_features:
+          - tenure
+          - MonthlyCharges
+          - TotalCharges
+          categorical_features:
+          - gender
+          - SeniorCitizen
+          - Partner
+          - Dependents
+          - PhoneService
+          - MultipleLines
+          - InternetService
+          - OnlineSecurity
+          - OnlineBackup
+          - DeviceProtection
+          - TechSupport
+          - StreamingTV
+          - StreamingMovies
+          - Contract
+          - PaperlessBilling
+          - PaymentMethod
+          drop_columns:
+          - customerID
+          imputer_strategy: median
+          scaler: standard
+          smote_random_state: 42
+          smote_k_neighbors: 5
+    outs:
+    - path: data/processed/preprocessing_pipeline.joblib
+      hash: md5
+      md5: 47afc7bcc8949996454ca0c9c35ee9b8
+      size: 7927
+  featurize:
+    cmd: python src/features/featurize.py
+    deps:
+    - path: configs/params.yaml
+      hash: md5
+      md5: f14bbd309bdcfc4b0d3511a4af6dead6
+      size: 3013
+    - path: data/processed/preprocessing_pipeline.joblib
+      hash: md5
+      md5: 47afc7bcc8949996454ca0c9c35ee9b8
+      size: 7927
+    - path: data/processed/telco_churn_clean.csv
+      hash: md5
+      md5: 271d21bb139e99eb31c00e2aee35e70e
+      size: 962966
+    - path: src/features/featurize.py
+      hash: md5
+      md5: 2f5691f36e7e4ce430ab874d398ca3ca
+      size: 3850
+    params:
+      configs/params.yaml:
+        data:
+          raw_path: data/raw/telco_churn.csv
+          processed_path: data/processed/telco_churn_clean.csv
+          train_path: data/splits/train.csv
+          test_path: data/splits/test.csv
+          reference_path: data/splits/reference.csv
+          production_path: data/splits/production.csv
+          target_column: Churn
+          random_seed: 42
+          test_size: 0.2
+          reference_ratio: 0.7
+          drop_columns: []
+        preprocessing:
+          pipeline_artifact: data/processed/preprocessing_pipeline.joblib
+          numeric_features:
+          - tenure
+          - MonthlyCharges
+          - TotalCharges
+          categorical_features:
+          - gender
+          - SeniorCitizen
+          - Partner
+          - Dependents
+          - PhoneService
+          - MultipleLines
+          - InternetService
+          - OnlineSecurity
+          - OnlineBackup
+          - DeviceProtection
+          - TechSupport
+          - StreamingTV
+          - StreamingMovies
+          - Contract
+          - PaperlessBilling
+          - PaymentMethod
+          drop_columns:
+          - customerID
+          imputer_strategy: median
+          scaler: standard
+          smote_random_state: 42
+          smote_k_neighbors: 5
+    outs:
+    - path: data/splits/production.csv
+      hash: md5
+      md5: 58290553368b03ba2374b338cd1ecd08
+      size: 373387
+    - path: data/splits/reference.csv
+      hash: md5
+      md5: f907e8893cb779c609771eb098315534
+      size: 675296
+    - path: data/splits/test.csv
+      hash: md5
+      md5: 81b0f1f08795fa834c03ecf92ae74e37
+      size: 329249
+    - path: data/splits/train.csv
+      hash: md5
+      md5: 533ec2fab195ba2d262c61d598c90924
+      size: 1312565
