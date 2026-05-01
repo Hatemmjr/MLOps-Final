@@ -5,8 +5,8 @@ stages:
     deps:
     - path: configs/params.yaml
       hash: md5
-      md5: f14bbd309bdcfc4b0d3511a4af6dead6
-      size: 3013
+      md5: d2ed19908594371645f573a44fb25fcc
+      size: 3011
     - path: src/data/prepare.py
       hash: md5
       md5: 6c5173f6b51a01b61fcd7967d8c02336
@@ -27,8 +27,8 @@ stages:
     deps:
     - path: configs/params.yaml
       hash: md5
-      md5: f14bbd309bdcfc4b0d3511a4af6dead6
-      size: 3013
+      md5: d2ed19908594371645f573a44fb25fcc
+      size: 3011
     - path: data/processed/telco_churn_clean.csv
       hash: md5
       md5: 271d21bb139e99eb31c00e2aee35e70e
@@ -80,8 +80,8 @@ stages:
     deps:
     - path: configs/params.yaml
       hash: md5
-      md5: f14bbd309bdcfc4b0d3511a4af6dead6
-      size: 3013
+      md5: d2ed19908594371645f573a44fb25fcc
+      size: 3011
     - path: data/processed/preprocessing_pipeline.joblib
       hash: md5
       md5: 47afc7bcc8949996454ca0c9c35ee9b8

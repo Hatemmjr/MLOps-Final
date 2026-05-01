@@ -1,0 +1,58 @@
+# HELP prediction_confidence_monitoring Prediction confidence scores on production batch
+# TYPE prediction_confidence_monitoring histogram
+prediction_confidence_monitoring_bucket{le="0.1"} 197.0
+prediction_confidence_monitoring_bucket{le="0.2"} 433.0
+prediction_confidence_monitoring_bucket{le="0.3"} 636.0
+prediction_confidence_monitoring_bucket{le="0.4"} 839.0
+prediction_confidence_monitoring_bucket{le="0.5"} 1072.0
+prediction_confidence_monitoring_bucket{le="0.6"} 1271.0
+prediction_confidence_monitoring_bucket{le="0.7"} 1467.0
+prediction_confidence_monitoring_bucket{le="0.8"} 1679.0
+prediction_confidence_monitoring_bucket{le="0.9"} 1891.0
+prediction_confidence_monitoring_bucket{le="1.0"} 2113.0
+prediction_confidence_monitoring_bucket{le="+Inf"} 2113.0
+prediction_confidence_monitoring_count 2113.0
+prediction_confidence_monitoring_sum 1058.813328707303
+# HELP prediction_confidence_monitoring_created Prediction confidence scores on production batch
+# TYPE prediction_confidence_monitoring_created gauge
+prediction_confidence_monitoring_created 1.7775887435282078e+09
+# HELP feature_monthly_charges_monitoring MonthlyCharges distribution in production batch
+# TYPE feature_monthly_charges_monitoring histogram
+feature_monthly_charges_monitoring_bucket{le="20.0"} 565.0
+feature_monthly_charges_monitoring_bucket{le="40.0"} 791.0
+feature_monthly_charges_monitoring_bucket{le="60.0"} 1051.0
+feature_monthly_charges_monitoring_bucket{le="80.0"} 1272.0
+feature_monthly_charges_monitoring_bucket{le="100.0"} 1507.0
+feature_monthly_charges_monitoring_bucket{le="120.0"} 1731.0
+feature_monthly_charges_monitoring_bucket{le="+Inf"} 2113.0
+feature_monthly_charges_monitoring_count 2113.0
+feature_monthly_charges_monitoring_sum 129552.05840186101
+# HELP feature_monthly_charges_monitoring_created MonthlyCharges distribution in production batch
+# TYPE feature_monthly_charges_monitoring_created gauge
+feature_monthly_charges_monitoring_created 1.777588743529033e+09
+# HELP feature_tenure_monitoring Tenure (months) distribution in production batch
+# TYPE feature_tenure_monitoring histogram
+feature_tenure_monitoring_bucket{le="0.0"} 577.0
+feature_tenure_monitoring_bucket{le="12.0"} 760.0
+feature_tenure_monitoring_bucket{le="24.0"} 930.0
+feature_tenure_monitoring_bucket{le="36.0"} 1094.0
+feature_tenure_monitoring_bucket{le="48.0"} 1265.0
+feature_tenure_monitoring_bucket{le="60.0"} 1442.0
+feature_tenure_monitoring_bucket{le="72.0"} 1598.0
+feature_tenure_monitoring_bucket{le="+Inf"} 2113.0
+feature_tenure_monitoring_count 2113.0
+feature_tenure_monitoring_sum 71035.4305003466
+# HELP feature_tenure_monitoring_created Tenure (months) distribution in production batch
+# TYPE feature_tenure_monitoring_created gauge
+feature_tenure_monitoring_created 1.7775887435298612e+09
+# HELP model_version_monitoring Current model version in production
+# TYPE model_version_monitoring gauge
+model_version_monitoring 1.0
+# HELP inference_count_by_class_monitoring_total Simulated inference count by predicted class
+# TYPE inference_count_by_class_monitoring_total counter
+inference_count_by_class_monitoring_total{predicted_class="0"} 1533.0
+inference_count_by_class_monitoring_total{predicted_class="1"} 580.0
+# HELP inference_count_by_class_monitoring_created Simulated inference count by predicted class
+# TYPE inference_count_by_class_monitoring_created gauge
+inference_count_by_class_monitoring_created{predicted_class="0"} 1.777588743530779e+09
+inference_count_by_class_monitoring_created{predicted_class="1"} 1.777588743530787e+09

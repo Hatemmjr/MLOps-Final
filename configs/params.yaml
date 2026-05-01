@@ -14,7 +14,8 @@ data:
   target_column: Churn
   random_seed: 42
   test_size: 0.2
-  reference_ratio: 0.7   # first 70% = reference, remainder = production
+  reference_ratio: 0.7
+  drop_columns: []   # <--- Add this line here
 
 # --------------- Preprocessing --------------------------------
 preprocessing:
@@ -73,7 +74,7 @@ training:
 
 # --------------- MLflow --------------------------------------
 mlflow:
-  tracking_uri: http://localhost:5000
+  tracking_uri: sqlite:///mlflow.db
   backend_store_uri: sqlite:///mlflow.db
   artifact_root: ./mlartifacts
   staging_stage: Staging
@@ -106,3 +107,5 @@ ci:
   coverage_threshold: 70
   min_accuracy: 0.70
   min_roc_auc: 0.75
+
+

@@ -13,13 +13,8 @@ import pathlib
 
 import pandas as pd
 import yaml
-from evidently import ColumnMapping
-from evidently.metric_preset import (
-    DataDriftPreset,
-    DataQualityPreset,
-    TargetDriftPreset,
-)
-from evidently.report import Report
+from evidently import Report
+from evidently.presets import DataDriftPreset, DataSummaryPreset
 from prometheus_client import (
     CollectorRegistry,
     Counter,
@@ -42,14 +37,6 @@ def load_params(path: str = "configs/params.yaml") -> dict:
 # Evidently Report Generation
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _column_mapping(params: dict) -> ColumnMapping:
-    return ColumnMapping(
-        target=params["data"]["target_column"],
-        numerical_features=params["preprocessing"]["numeric_features"],
-        categorical_features=params["preprocessing"]["categorical_features"],
-    )
-
-
 def generate_report(
     reference: pd.DataFrame,
     current: pd.DataFrame,
@@ -60,22 +47,19 @@ def generate_report(
     reports_dir = pathlib.Path(params["monitoring"]["reports_dir"])
     reports_dir.mkdir(parents=True, exist_ok=True)
 
-    col_map = _column_mapping(params)
-
     report = Report(
         metrics=[
             DataDriftPreset(),
-            DataQualityPreset(),
-            TargetDriftPreset(),
+            DataSummaryPreset(),
         ]
     )
-    report.run(reference_data=reference, current_data=current, column_mapping=col_map)
+    snapshot = report.run(reference_data=reference, current_data=current)
 
     out_path = reports_dir / f"{report_name}.html"
-    report.save_html(str(out_path))
+    snapshot.save_html(str(out_path))
     log.info("Report saved to %s", out_path)
 
-    return report.as_dict()
+    return snapshot.dict()
 
 
 def parse_drift_results(report_dict: dict, params: dict) -> tuple[float, list[str]]:
@@ -88,16 +72,14 @@ def parse_drift_results(report_dict: dict, params: dict) -> tuple[float, list[st
 
     try:
         metrics = report_dict.get("metrics", [])
-        for metric in metrics:
-            result = metric.get("result", {})
-            # DataDriftPreset populates 'drift_by_columns'
-            drift_by_columns = result.get("drift_by_columns", {})
-            if drift_by_columns:
-                total_features = len(drift_by_columns)
-                for col_name, col_result in drift_by_columns.items():
-                    if col_result.get("drift_detected", False):
-                        drifted_features.append(col_name)
-                break  # Only process the first DataDrift metric
+        for m in metrics:
+            if m.get("metric_name", "").startswith("ValueDrift"):
+                total_features += 1
+                col = m.get("config", {}).get("column")
+                score = m.get("value")
+                thresh = m.get("config", {}).get("threshold", 0.05)
+                if col and score is not None and score < thresh:
+                    drifted_features.append(col)
     except Exception as e:
         log.warning("Could not parse drift results: %s", e)
         return 0.0, []

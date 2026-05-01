@@ -68,7 +68,7 @@ def compute_metrics(model, X, y) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 def run_logistic_regression(X_train, y_train, X_test, y_test, params: dict) -> str:
     cfg = params["training"]["logistic_regression"]
-    exp_name = params["mlflow"]["experiment_name"]
+    exp_name = params["training"]["experiment_name"]
     n_trials = params["training"]["n_optuna_trials"]
     seed = params["data"]["random_seed"]
     cv = StratifiedKFold(n_splits=params["training"]["cv_folds"], shuffle=True, random_state=seed)

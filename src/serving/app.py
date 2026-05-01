@@ -63,13 +63,32 @@ INFERENCE_COUNTER = Counter(
 # ─────────────────────────────────────────────────────────────────────────────
 _model_state: dict[str, Any] = {
     "model": None,
+    "preprocessor": None,   # sklearn ColumnTransformer (fitted)
     "model_name": None,
     "model_version": None,
     "status": "not_loaded",
 }
 
 
+def _load_preprocessor() -> None:
+    """Load the fitted sklearn ColumnTransformer from disk."""
+    import joblib
+    pipeline_path = pathlib.Path(PARAMS["preprocessing"]["pipeline_artifact"])
+    if pipeline_path.exists():
+        pipe = joblib.load(pipeline_path)
+        # The pipeline is imblearn Pipeline: [('preprocessor', CT), ('smote', SMOTE)]
+        # At inference time we only need the ColumnTransformer, not SMOTE
+        if hasattr(pipe, "named_steps") and "preprocessor" in pipe.named_steps:
+            _model_state["preprocessor"] = pipe.named_steps["preprocessor"]
+        elif hasattr(pipe, "transform"):  # already a plain ColumnTransformer
+            _model_state["preprocessor"] = pipe
+        log.info("Preprocessing pipeline loaded from %s", pipeline_path)
+    else:
+        log.warning("Preprocessing pipeline not found at %s — raw features will be passed directly.", pipeline_path)
+
+
 def _load_model() -> None:
+    _load_preprocessor()
     mlflow.set_tracking_uri(MLFLOW_CFG["tracking_uri"])
     model_name = SERVING_CFG["model_name"]
     stage = SERVING_CFG["model_stage"]
@@ -96,17 +115,23 @@ def _load_model() -> None:
 def _load_local_fallback() -> None:
     """Fallback: load the latest joblib artifact from disk for CI environments."""
     import joblib
-    artifacts = list(pathlib.Path("mlartifacts").rglob("model.pkl"))
+    # Search both mlartifacts/ and mlruns/ for model.pkl
+    search_dirs = [pathlib.Path("mlartifacts"), pathlib.Path("mlruns")]
+    artifacts = []
+    for d in search_dirs:
+        if d.exists():
+            artifacts.extend(d.rglob("model.pkl"))
     if not artifacts:
         log.error("No local model artifact found. /predict will return 503.")
         _model_state["status"] = "unavailable"
         return
-    model = joblib.load(artifacts[-1])
+    chosen = sorted(artifacts)[-1]
+    model = joblib.load(chosen)
     _model_state["model"] = model
     _model_state["model_name"] = "local-fallback"
     _model_state["model_version"] = "local"
     _model_state["status"] = "ready"
-    log.info("Loaded local fallback model from %s", artifacts[-1])
+    log.info("Loaded local fallback model from %s", chosen)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -205,6 +230,19 @@ def _predict_single(record: ChurnRecord) -> PredictionResponse:
         raise HTTPException(status_code=503, detail="Model not available")
 
     df = pd.DataFrame([record.dict()])
+
+    # Apply preprocessing (ColumnTransformer: scale numerics + one-hot encode categoricals)
+    preprocessor = _model_state["preprocessor"]
+    if preprocessor is not None:
+        try:
+            df = pd.DataFrame(
+                preprocessor.transform(df),
+                columns=preprocessor.get_feature_names_out(),
+            )
+        except Exception as e:
+            log.error("Preprocessing failed: %s", e)
+            raise HTTPException(status_code=500, detail=f"Preprocessing error: {e}")
+
     model = _model_state["model"]
     pred = int(model.predict(df)[0])
     confidence = float(model.predict_proba(df)[0][pred])

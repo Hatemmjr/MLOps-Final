@@ -1,0 +1,25 @@
+# Virtual Environment
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Data and Models
+data/
+mlartifacts/
+mlruns/
+mlflow.db
+*.zip
+*.csv
+*.joblib
+*.pkl
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Temporary files
+test.html
+dvc_graph.md
+docs/dvc_graph.md
