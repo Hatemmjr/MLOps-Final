@@ -25,6 +25,7 @@ log = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 # Config
 # ─────────────────────────────────────────────────────────────────────────────
+
 def _load_params(path: str = "configs/params.yaml") -> dict:
     with open(path) as f:
         return yaml.safe_load(f)
@@ -84,7 +85,11 @@ def _load_preprocessor() -> None:
             _model_state["preprocessor"] = pipe
         log.info("Preprocessing pipeline loaded from %s", pipeline_path)
     else:
-        log.warning("Preprocessing pipeline not found at %s — raw features will be passed directly.", pipeline_path)
+        log.warning(
+            "Preprocessing pipeline not found at %s — "
+            "raw features will be passed directly.",
+            pipeline_path,
+        )
 
 
 def _load_model() -> None:

@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
+
 # Create a minimal mock model
 class MockModel:
     def predict(self, X):
