@@ -52,10 +52,11 @@ SAMPLE_RECORD = {
 
 @pytest.fixture(scope="module")
 def client():
+    from unittest.mock import patch
     from src.serving.app import app
-    _mock_load_model()
-    with TestClient(app) as c:
-        yield c
+    with patch("src.serving.app._load_model", side_effect=_mock_load_model):
+        with TestClient(app) as c:
+            yield c
 
 
 # ─── Tests ───────────────────────────────────────────────────────────────────

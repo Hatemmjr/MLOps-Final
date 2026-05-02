@@ -37,6 +37,7 @@ def load_params(path: str = "configs/params.yaml") -> dict:
 # Evidently Report Generation
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def generate_report(
     reference: pd.DataFrame,
     current: pd.DataFrame,
@@ -137,6 +138,7 @@ def apply_drift_threshold(
 # Prometheus Metrics
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def record_prometheus_metrics(
     reference: pd.DataFrame,
     production: pd.DataFrame,
@@ -213,6 +215,7 @@ def record_prometheus_metrics(
 # ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def main() -> None:
     params = load_params()
