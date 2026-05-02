@@ -46,5 +46,9 @@ def test_full_pipeline_e2e():
         # Run Training
         train.main()
 
-        # Run Evaluation
-        evaluate.main()
+        # Run Evaluation — call helpers directly to avoid sys.exit() in main()
+        params = mock_load_params()
+        model = evaluate.load_production_model(params)
+        metrics = evaluate.evaluate_model(model, params)
+        assert "roc_auc" in metrics
+        assert "accuracy" in metrics
