@@ -22,7 +22,7 @@ def test_full_pipeline_e2e():
         import yaml
         with open("configs/params.yaml") as f:
             p = yaml.safe_load(f)
-        
+
         # Override for speed during tests
         p["training"]["n_optuna_trials"] = 1
         p["training"]["cv_folds"] = 2
@@ -33,18 +33,18 @@ def test_full_pipeline_e2e():
          patch("src.features.featurize.load_params", side_effect=mock_load_params), \
          patch("src.training.train.load_params", side_effect=mock_load_params), \
          patch("src.evaluation.evaluate.load_params", side_effect=mock_load_params):
-         
+
         # Run Data Prepare
         prepare.main()
-        
+
         # Run Data Preprocess
         preprocess.main()
-        
+
         # Run Featurize
         featurize.main()
-        
+
         # Run Training
         train.main()
-        
+
         # Run Evaluation
         evaluate.main()
