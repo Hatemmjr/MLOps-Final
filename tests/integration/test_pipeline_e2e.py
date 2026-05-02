@@ -5,6 +5,7 @@ This also ensures we get high code coverage on the CI server.
 
 from unittest.mock import patch
 
+
 def test_full_pipeline_e2e():
     """
     Runs the entire pipeline end-to-end using mocked parameters to speed up execution
@@ -14,6 +15,7 @@ def test_full_pipeline_e2e():
     from src.evaluation import evaluate
     from src.features import featurize
     from src.training import train
+
     # We patch the load_params function in each module to reduce Optuna trials for speed
     def mock_load_params(*args, **kwargs):
         # Read the real params
