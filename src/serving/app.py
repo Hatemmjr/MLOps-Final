@@ -26,6 +26,7 @@ log = logging.getLogger(__name__)
 # Config
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _load_params(path: str = "configs/params.yaml") -> dict:
     with open(path) as f:
         return yaml.safe_load(f)
