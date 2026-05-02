@@ -15,7 +15,7 @@ prediction_confidence_monitoring_count 2113.0
 prediction_confidence_monitoring_sum 1058.813328707303
 # HELP prediction_confidence_monitoring_created Prediction confidence scores on production batch
 # TYPE prediction_confidence_monitoring_created gauge
-prediction_confidence_monitoring_created 1.7775887435282078e+09
+prediction_confidence_monitoring_created 1.7776759612960582e+09
 # HELP feature_monthly_charges_monitoring MonthlyCharges distribution in production batch
 # TYPE feature_monthly_charges_monitoring histogram
 feature_monthly_charges_monitoring_bucket{le="20.0"} 565.0
@@ -29,7 +29,7 @@ feature_monthly_charges_monitoring_count 2113.0
 feature_monthly_charges_monitoring_sum 129552.05840186101
 # HELP feature_monthly_charges_monitoring_created MonthlyCharges distribution in production batch
 # TYPE feature_monthly_charges_monitoring_created gauge
-feature_monthly_charges_monitoring_created 1.777588743529033e+09
+feature_monthly_charges_monitoring_created 1.777675961296938e+09
 # HELP feature_tenure_monitoring Tenure (months) distribution in production batch
 # TYPE feature_tenure_monitoring histogram
 feature_tenure_monitoring_bucket{le="0.0"} 577.0
@@ -44,7 +44,7 @@ feature_tenure_monitoring_count 2113.0
 feature_tenure_monitoring_sum 71035.4305003466
 # HELP feature_tenure_monitoring_created Tenure (months) distribution in production batch
 # TYPE feature_tenure_monitoring_created gauge
-feature_tenure_monitoring_created 1.7775887435298612e+09
+feature_tenure_monitoring_created 1.777675961297787e+09
 # HELP model_version_monitoring Current model version in production
 # TYPE model_version_monitoring gauge
 model_version_monitoring 1.0
@@ -54,5 +54,5 @@ inference_count_by_class_monitoring_total{predicted_class="0"} 1533.0
 inference_count_by_class_monitoring_total{predicted_class="1"} 580.0
 # HELP inference_count_by_class_monitoring_created Simulated inference count by predicted class
 # TYPE inference_count_by_class_monitoring_created gauge
-inference_count_by_class_monitoring_created{predicted_class="0"} 1.777588743530779e+09
-inference_count_by_class_monitoring_created{predicted_class="1"} 1.777588743530787e+09
+inference_count_by_class_monitoring_created{predicted_class="0"} 1.777675961298764e+09
+inference_count_by_class_monitoring_created{predicted_class="1"} 1.7776759612987719e+09

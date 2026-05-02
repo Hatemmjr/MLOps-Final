@@ -9,12 +9,13 @@ import pathlib
 from contextlib import asynccontextmanager
 from typing import Any
 
+import joblib
 import mlflow
 import mlflow.sklearn
-import numpy as np
 import pandas as pd
 import yaml
 from fastapi import FastAPI, HTTPException
+from mlflow import MlflowClient
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
 from pydantic import BaseModel, validator
 
@@ -72,7 +73,6 @@ _model_state: dict[str, Any] = {
 
 def _load_preprocessor() -> None:
     """Load the fitted sklearn ColumnTransformer from disk."""
-    import joblib
     pipeline_path = pathlib.Path(PARAMS["preprocessing"]["pipeline_artifact"])
     if pipeline_path.exists():
         pipe = joblib.load(pipeline_path)
@@ -100,13 +100,13 @@ def _load_model() -> None:
         _model_state["model_version"] = stage
         _model_state["status"] = "ready"
 
+        log.info("Model '%s' (%s) loaded successfully.", model_name, stage)
+
         # Try to fetch numeric version for gauge
-        from mlflow import MlflowClient
         client = MlflowClient()
         versions = client.get_latest_versions(model_name, stages=[stage])
         if versions:
             MODEL_VERSION_GAUGE.set(int(versions[0].version))
-        log.info("Model '%s' (%s) loaded successfully.", model_name, stage)
     except Exception as e:
         log.warning("MLflow model load failed (%s). Falling back to local artifact.", e)
         _load_local_fallback()
@@ -114,7 +114,6 @@ def _load_model() -> None:
 
 def _load_local_fallback() -> None:
     """Fallback: load the latest joblib artifact from disk for CI environments."""
-    import joblib
     # Search both mlartifacts/ and mlruns/ for model.pkl
     search_dirs = [pathlib.Path("mlartifacts"), pathlib.Path("mlruns")]
     artifacts = []

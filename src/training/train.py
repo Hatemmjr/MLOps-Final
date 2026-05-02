@@ -6,12 +6,9 @@ All parameters come from configs/params.yaml.
 """
 
 import logging
-import pathlib
 
-import joblib
 import mlflow
 import mlflow.sklearn
-import numpy as np
 import optuna
 import pandas as pd
 import yaml
@@ -68,22 +65,31 @@ def compute_metrics(model, X, y) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 def run_logistic_regression(X_train, y_train, X_test, y_test, params: dict) -> str:
     cfg = params["training"]["logistic_regression"]
-    exp_name = params["training"]["experiment_name"]
     n_trials = params["training"]["n_optuna_trials"]
     seed = params["data"]["random_seed"]
-    cv = StratifiedKFold(n_splits=params["training"]["cv_folds"], shuffle=True, random_state=seed)
+    cv = StratifiedKFold(
+        n_splits=params["training"]["cv_folds"], shuffle=True, random_state=seed
+    )
 
     def objective(trial):
         C = trial.suggest_categorical("C", cfg["C"])
         solver = trial.suggest_categorical("solver", cfg["solver"])
         max_iter = trial.suggest_categorical("max_iter", cfg["max_iter"])
-        clf = LogisticRegression(C=C, solver=solver, max_iter=max_iter, random_state=seed)
-        score = cross_val_score(clf, X_train, y_train, cv=cv, scoring="roc_auc").mean()
+        clf = LogisticRegression(
+            C=C, solver=solver, max_iter=max_iter, random_state=seed
+        )
+        score = cross_val_score(
+            clf, X_train, y_train, cv=cv, scoring="roc_auc"
+        ).mean()
         return score
 
     with mlflow.start_run(run_name="logistic-regression-optuna") as run:
         study = optuna.create_study(direction="maximize")
-        study.optimize(objective, n_trials=n_trials, timeout=params["training"]["optuna_timeout"])
+        study.optimize(
+            objective,
+            n_trials=n_trials,
+            timeout=params["training"]["optuna_timeout"],
+        )
         best = study.best_params
         mlflow.log_params(best)
 
@@ -104,12 +110,16 @@ def run_random_forest(X_train, y_train, X_test, y_test, params: dict) -> str:
     cfg = params["training"]["random_forest"]
     n_trials = params["training"]["n_optuna_trials"]
     seed = params["data"]["random_seed"]
-    cv = StratifiedKFold(n_splits=params["training"]["cv_folds"], shuffle=True, random_state=seed)
+    cv = StratifiedKFold(
+        n_splits=params["training"]["cv_folds"], shuffle=True, random_state=seed
+    )
 
     def objective(trial):
         n_estimators = trial.suggest_categorical("n_estimators", cfg["n_estimators"])
         max_depth = trial.suggest_categorical("max_depth", cfg["max_depth"])
-        min_samples_split = trial.suggest_categorical("min_samples_split", cfg["min_samples_split"])
+        min_samples_split = trial.suggest_categorical(
+            "min_samples_split", cfg["min_samples_split"]
+        )
         clf = RandomForestClassifier(
             n_estimators=n_estimators,
             max_depth=max_depth,
@@ -117,12 +127,18 @@ def run_random_forest(X_train, y_train, X_test, y_test, params: dict) -> str:
             random_state=seed,
             n_jobs=-1,
         )
-        score = cross_val_score(clf, X_train, y_train, cv=cv, scoring="roc_auc").mean()
+        score = cross_val_score(
+            clf, X_train, y_train, cv=cv, scoring="roc_auc"
+        ).mean()
         return score
 
     with mlflow.start_run(run_name="random-forest-optuna") as run:
         study = optuna.create_study(direction="maximize")
-        study.optimize(objective, n_trials=n_trials, timeout=params["training"]["optuna_timeout"])
+        study.optimize(
+            objective,
+            n_trials=n_trials,
+            timeout=params["training"]["optuna_timeout"],
+        )
         best = study.best_params
         mlflow.log_params(best)
 
@@ -143,7 +159,9 @@ def run_gradient_boosting(X_train, y_train, X_test, y_test, params: dict) -> str
     cfg = params["training"]["gradient_boosting"]
     n_trials = params["training"]["n_optuna_trials"]
     seed = params["data"]["random_seed"]
-    cv = StratifiedKFold(n_splits=params["training"]["cv_folds"], shuffle=True, random_state=seed)
+    cv = StratifiedKFold(
+        n_splits=params["training"]["cv_folds"], shuffle=True, random_state=seed
+    )
 
     def objective(trial):
         n_estimators = trial.suggest_categorical("n_estimators", cfg["n_estimators"])
@@ -155,12 +173,18 @@ def run_gradient_boosting(X_train, y_train, X_test, y_test, params: dict) -> str
             max_depth=max_depth,
             random_state=seed,
         )
-        score = cross_val_score(clf, X_train, y_train, cv=cv, scoring="roc_auc").mean()
+        score = cross_val_score(
+            clf, X_train, y_train, cv=cv, scoring="roc_auc"
+        ).mean()
         return score
 
     with mlflow.start_run(run_name="gradient-boosting-optuna") as run:
         study = optuna.create_study(direction="maximize")
-        study.optimize(objective, n_trials=n_trials, timeout=params["training"]["optuna_timeout"])
+        study.optimize(
+            objective,
+            n_trials=n_trials,
+            timeout=params["training"]["optuna_timeout"],
+        )
         best = study.best_params
         mlflow.log_params(best)
 
@@ -183,7 +207,11 @@ def register_and_promote_best(run_ids: list[str], params: dict) -> None:
     Registry, then transition: None → Staging → Production.
     """
     client = MlflowClient()
-    model_name = params["mlflow"]["model_name"] if "model_name" in params["mlflow"] else params["training"]["model_name"]
+    model_name = (
+        params["mlflow"]["model_name"]
+        if "model_name" in params["mlflow"]
+        else params["training"]["model_name"]
+    )
     staging_stage = params["mlflow"]["staging_stage"]
     production_stage = params["mlflow"]["production_stage"]
 

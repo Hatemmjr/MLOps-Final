@@ -8,10 +8,6 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-# ─── Patch model loading so tests don't require a live MLflow server ─────────
-import sys
-import types
-
 # Create a minimal mock model
 class MockModel:
     def predict(self, X):

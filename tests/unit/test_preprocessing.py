@@ -5,8 +5,6 @@ At least 3 transformation tests as required by the rubric.
 
 import numpy as np
 import pandas as pd
-import pytest
-from sklearn.pipeline import Pipeline
 
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────

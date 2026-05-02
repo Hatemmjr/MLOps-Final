@@ -11,6 +11,7 @@ import json
 import logging
 import pathlib
 
+import numpy as np
 import pandas as pd
 import yaml
 from evidently import Report
@@ -20,7 +21,6 @@ from prometheus_client import (
     Counter,
     Gauge,
     Histogram,
-    push_to_gateway,
     write_to_textfile,
 )
 
@@ -114,7 +114,9 @@ def apply_drift_threshold(
         print("\n" + "=" * 60)
         print("⚠  DATA DRIFT ALERT")
         print(f"   Report      : {report_name}")
-        print(f"   Drifted     : {len(drifted_features)} / {int(len(drifted_features)/fraction) if fraction else 0} features ({fraction:.1%})")
+        print(f"   Drifted     : {len(drifted_features)} / "
+              f"{int(len(drifted_features)/fraction) if fraction else 0} "
+              f"features ({fraction:.1%})")
         print(f"   Threshold   : {threshold:.1%}")
         print(f"   Features    : {drifted_features}")
         print(f"   Action      : {warning['action_required']}")
@@ -154,7 +156,6 @@ def record_prometheus_metrics(
         buckets=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
         registry=registry,
     )
-    import numpy as np
     rng = np.random.default_rng(42)
     for score in rng.uniform(0, 1, len(production)):
         conf_hist.observe(float(score))
@@ -224,7 +225,6 @@ def main() -> None:
 
     # ── Report 1: Baseline (reference vs. clean held-out) ──────────────────
     log.info("Generating BASELINE report (reference vs. test) …")
-    test_set = pd.read_csv(dp["test_path"])
     # The test set uses transformed feature names; read raw for monitoring
     baseline_current = reference.sample(
         n=min(len(reference) // 5, len(reference)),
