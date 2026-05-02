@@ -54,7 +54,7 @@ jobs:
 
       - name: Run pytest with coverage
         run: |
-          pytest tests/unit/ tests/data/ \
+          pytest tests/ \
             --cov=src \
             --cov-report=term-missing \
             --cov-fail-under=70 \
