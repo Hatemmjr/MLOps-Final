@@ -6,7 +6,7 @@
 
 ---
 
-## ⚡ Quickstart (3 commands)
+## Quickstart 
 
 ```bash
 pip install -r requirements.txt
@@ -18,7 +18,7 @@ The API is live at **http://localhost:8000/docs**
 
 ---
 
-## 📋 Full Setup Guide
+## Full Setup Guide
 
 ### 1. Clone & Install
 
@@ -92,7 +92,7 @@ curl -X POST http://localhost:8000/predict \
 pytest tests/ --cov=src --cov-report=term-missing -v
 ```
 
-Coverage must be ≥ 70%.
+Coverage
 
 ### 7. Generate Monitoring Reports
 
@@ -114,7 +114,7 @@ python docs/experiment_log_generator.py
 # Output: docs/experiment_log.csv
 ```
 
-### 9. Docker (Bonus A)
+### 9. Docker 
 
 ```bash
 docker compose up --build
@@ -125,7 +125,7 @@ docker compose up --build
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 ```
 Raw Data (DVC)
@@ -166,7 +166,7 @@ prepare → preprocess → featurize → train
 
 ---
 
-## 🧪 Key Commands Reference
+## Key Commands Reference
 
 | Task | Command |
 |------|---------|
@@ -183,7 +183,7 @@ prepare → preprocess → featurize → train
 
 ---
 
-## 👥 Team
+## Team
 
 | Name | Student ID |
 |------|-----------|
@@ -193,7 +193,7 @@ prepare → preprocess → featurize → train
 
 ---
 
-## 📊 Dataset
+## Dataset
 
 **IBM Telco Customer Churn** — 7,043 rows × 20 features  
 Source: https://www.kaggle.com/datasets/blastchar/telco-customer-churn  
