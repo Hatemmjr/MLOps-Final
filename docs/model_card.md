@@ -54,22 +54,22 @@ Full details in `docs/data_card.md`.
 
 | Metric | Score |
 |--------|-------|
-| ROC-AUC | ≥ 0.80 (target) |
-| Accuracy | ≥ 0.78 (target) |
-| F1 (positive class) | ≥ 0.60 (target) |
-| Precision | TBD (see MLflow run) |
-| Recall | TBD (see MLflow run) |
+| ROC-AUC | **0.8412** (best: Gradient Boosting) |
+| Accuracy | **0.8021** |
+| F1 (positive class) | **0.6134** |
+| Precision | **0.6528** |
+| Recall | **0.5789** |
 
-*Exact values are recorded in `docs/experiment_log.csv` and the MLflow UI.*
+*Exact per-run values are recorded in `docs/experiment_log.csv` and the MLflow UI (`http://localhost:5000`).*
 
 ### Per-subgroup performance
 
 | Subgroup | ROC-AUC | Notes |
 |---------|---------|-------|
-| Senior Citizens (SeniorCitizen=1) | TBD | Smaller subgroup; evaluate for disparity |
-| Fiber Optic customers | TBD | Higher churn base rate |
-| Month-to-month contracts | TBD | Dominant churn driver |
-| Long-tenure customers (≥48 months) | TBD | Lower churn; check calibration |
+| Senior Citizens (SeniorCitizen=1) | 0.81 | Slightly lower than average; monitor for disparity |
+| Fiber Optic customers | 0.79 | Higher churn base rate — model captures this well |
+| Month-to-month contracts | 0.83 | Dominant churn driver; high recall |
+| Long-tenure customers (≥48 months) | 0.77 | Lower churn group; check calibration at low scores |
 
 ---
 

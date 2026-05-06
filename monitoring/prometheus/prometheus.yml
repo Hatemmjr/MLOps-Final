@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'telco-serving'
+    static_configs:
+      - targets: ['telco-serving:8001']

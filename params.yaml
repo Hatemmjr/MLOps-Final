@@ -1,0 +1,109 @@
+# ============================================================
+# DDSC611 MLOps Pipeline — Central Parameter Configuration
+# Dataset: Telco Customer Churn (IBM / Kaggle)
+# ============================================================
+
+# --------------- Data ----------------------------------------
+data:
+  raw_path: data/raw/telco_churn.csv
+  processed_path: data/processed/telco_churn_clean.csv
+  train_path: data/splits/train.csv
+  test_path: data/splits/test.csv
+  reference_path: data/splits/reference.csv
+  production_path: data/splits/production.csv
+  target_column: Churn
+  random_seed: 42
+  test_size: 0.2
+  reference_ratio: 0.7
+  drop_columns:
+    - customerID
+
+# --------------- Preprocessing --------------------------------
+preprocessing:
+  pipeline_artifact: data/processed/preprocessing_pipeline.joblib
+  numeric_features:
+    - tenure
+    - MonthlyCharges
+    - TotalCharges
+  categorical_features:
+    - gender
+    - SeniorCitizen
+    - Partner
+    - Dependents
+    - PhoneService
+    - MultipleLines
+    - InternetService
+    - OnlineSecurity
+    - OnlineBackup
+    - DeviceProtection
+    - TechSupport
+    - StreamingTV
+    - StreamingMovies
+    - Contract
+    - PaperlessBilling
+    - PaymentMethod
+  imputer_strategy: median
+  scaler: standard
+  smote_random_state: 42
+  smote_k_neighbors: 5
+
+# --------------- Training ------------------------------------
+training:
+  experiment_name: telco-churn-experiment
+  model_name: telco-churn-model
+  cv_folds: 5
+  scoring_metric: roc_auc
+  n_optuna_trials: 10
+  optuna_timeout: 120
+
+  random_forest:
+    n_estimators: [100, 200]
+    max_depth: [5, 10]
+    min_samples_split: [2, 5]
+
+  gradient_boosting:
+    n_estimators: [100, 200]
+    learning_rate: [0.05, 0.1]
+    max_depth: [3, 5]
+
+  logistic_regression:
+    C: [0.1, 1.0, 10.0]
+    solver: [lbfgs]
+    max_iter: [500]
+
+# --------------- MLflow --------------------------------------
+mlflow:
+  tracking_uri: sqlite:///mlflow.db
+  backend_store_uri: sqlite:///mlflow.db
+  artifact_root: ./mlartifacts
+  staging_stage: Staging
+  production_stage: Production
+  model_name: telco-churn-model
+  min_roc_auc_threshold: 0.65
+
+# --------------- Serving -------------------------------------
+serving:
+  host: 0.0.0.0
+  port: 8000
+  model_name: telco-churn-model
+  model_stage: Production
+  reload: false
+
+# --------------- Monitoring ----------------------------------
+monitoring:
+  drift_threshold: 0.2
+  stattest_threshold: 0.05
+  perturbation_features:
+    - MonthlyCharges
+    - tenure
+    - TotalCharges
+  perturbation_std_multiplier: 2.0
+  log_path: monitoring/drift.log
+  reports_dir: monitoring/evidently_reports
+  prometheus_port: 8001
+
+# --------------- CI/CD ---------------------------------------
+ci:
+  coverage_threshold: 70
+  min_accuracy: 0.65
+  min_roc_auc: 0.65

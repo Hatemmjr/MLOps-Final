@@ -7,13 +7,17 @@ All parameters come from configs/params.yaml.
 
 import logging
 import pathlib
+import sys
 
 import numpy as np
 import pandas as pd
 import yaml
 from sklearn.model_selection import train_test_split
 
-from src.data.preprocess import load_pipeline
+# Ensure project root is on sys.path when run as a script
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
+
+from src.data.preprocess import load_pipeline  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 log = logging.getLogger(__name__)

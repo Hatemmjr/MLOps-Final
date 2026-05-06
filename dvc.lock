@@ -1,11 +1,11 @@
 schema: '2.0'
 stages:
   prepare:
-    cmd: python src/data/prepare.py
+    cmd: python -m src.data.prepare
     deps:
     - path: configs/params.yaml
       hash: md5
-      md5: d2ed19908594371645f573a44fb25fcc
+      md5: ffc2524874adec79c48d6fbbf6f20155
       size: 3011
     - path: src/data/prepare.py
       hash: md5
@@ -23,11 +23,11 @@ stages:
       md5: 271d21bb139e99eb31c00e2aee35e70e
       size: 962966
   preprocess:
-    cmd: python src/data/preprocess.py
+    cmd: python -m src.data.preprocess
     deps:
     - path: configs/params.yaml
       hash: md5
-      md5: d2ed19908594371645f573a44fb25fcc
+      md5: ffc2524874adec79c48d6fbbf6f20155
       size: 3011
     - path: data/processed/telco_churn_clean.csv
       hash: md5
@@ -35,8 +35,8 @@ stages:
       size: 962966
     - path: src/data/preprocess.py
       hash: md5
-      md5: 5fd543d4254214e1b387b33479f2509b
-      size: 3897
+      md5: 9d915f9fae8f55b0ee091bb4a7289319
+      size: 3883
     params:
       configs/params.yaml:
         data.random_seed: 42
@@ -76,11 +76,11 @@ stages:
       md5: 47afc7bcc8949996454ca0c9c35ee9b8
       size: 7927
   featurize:
-    cmd: python src/features/featurize.py
+    cmd: python -m src.features.featurize
     deps:
     - path: configs/params.yaml
       hash: md5
-      md5: d2ed19908594371645f573a44fb25fcc
+      md5: ffc2524874adec79c48d6fbbf6f20155
       size: 3011
     - path: data/processed/preprocessing_pipeline.joblib
       hash: md5
@@ -92,8 +92,8 @@ stages:
       size: 962966
     - path: src/features/featurize.py
       hash: md5
-      md5: 2f5691f36e7e4ce430ab874d398ca3ca
-      size: 3850
+      md5: f402f5f270ce46172bca5956d3bb8943
+      size: 4003
     params:
       configs/params.yaml:
         data:
@@ -108,6 +108,11 @@ stages:
           test_size: 0.2
           reference_ratio: 0.7
           drop_columns: []
+        monitoring.perturbation_features:
+        - MonthlyCharges
+        - tenure
+        - TotalCharges
+        monitoring.perturbation_std_multiplier: 2.0
         preprocessing:
           pipeline_artifact: data/processed/preprocessing_pipeline.joblib
           numeric_features:
