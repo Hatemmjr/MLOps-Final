@@ -201,7 +201,7 @@ License: IBM Community Data License Agreement (educational use)
 
 ---
 
-## 🎥 Demo Video & Report
+## Demo Video & Report
 
 - **Demo Video:** [Link TBD]
 - **Technical Report:** [Link TBD]
