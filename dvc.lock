@@ -9,8 +9,8 @@ stages:
       size: 3011
     - path: src/data/prepare.py
       hash: md5
-      md5: 6c5173f6b51a01b61fcd7967d8c02336
-      size: 4526
+      md5: 5e95ddc953146899a23bf5b4a6bb6ed3
+      size: 2258
     params:
       configs/params.yaml:
         data.drop_columns: []
@@ -73,8 +73,8 @@ stages:
     outs:
     - path: data/processed/preprocessing_pipeline.joblib
       hash: md5
-      md5: 47afc7bcc8949996454ca0c9c35ee9b8
-      size: 7927
+      md5: d4f6b161dddda9c4eb84577a547c9522
+      size: 9106
   featurize:
     cmd: python -m src.features.featurize
     deps:
@@ -84,8 +84,8 @@ stages:
       size: 3011
     - path: data/processed/preprocessing_pipeline.joblib
       hash: md5
-      md5: 47afc7bcc8949996454ca0c9c35ee9b8
-      size: 7927
+      md5: d4f6b161dddda9c4eb84577a547c9522
+      size: 9106
     - path: data/processed/telco_churn_clean.csv
       hash: md5
       md5: 271d21bb139e99eb31c00e2aee35e70e
@@ -159,3 +159,82 @@ stages:
       hash: md5
       md5: 533ec2fab195ba2d262c61d598c90924
       size: 1312565
+  train:
+    cmd: python -m src.training.train
+    deps:
+    - path: configs/params.yaml
+      hash: md5
+      md5: ffc2524874adec79c48d6fbbf6f20155
+      size: 3011
+    - path: data/splits/test.csv
+      hash: md5
+      md5: 81b0f1f08795fa834c03ecf92ae74e37
+      size: 329249
+    - path: data/splits/train.csv
+      hash: md5
+      md5: 533ec2fab195ba2d262c61d598c90924
+      size: 1312565
+    - path: src/training/train.py
+      hash: md5
+      md5: 78c119d13770321eb9363a43d4b9570c
+      size: 11382
+    params:
+      configs/params.yaml:
+        data.random_seed: 42
+        data.target_column: Churn
+        mlflow:
+          tracking_uri: sqlite:///mlflow.db
+          backend_store_uri: sqlite:///mlflow.db
+          artifact_root: ./mlartifacts
+          staging_stage: Staging
+          production_stage: Production
+          min_roc_auc_threshold: 0.75
+        training:
+          experiment_name: telco-churn-experiment
+          model_name: telco-churn-model
+          cv_folds: 5
+          scoring_metric: roc_auc
+          n_optuna_trials: 30
+          optuna_timeout: 300
+          random_forest:
+            n_estimators:
+            - 100
+            - 200
+            - 300
+            max_depth:
+            - 5
+            - 10
+            - 15
+            - 
+            min_samples_split:
+            - 2
+            - 5
+            - 10
+          gradient_boosting:
+            n_estimators:
+            - 100
+            - 200
+            learning_rate:
+            - 0.05
+            - 0.1
+            - 0.2
+            max_depth:
+            - 3
+            - 5
+            - 7
+          logistic_regression:
+            C:
+            - 0.01
+            - 0.1
+            - 1.0
+            - 10.0
+            solver:
+            - lbfgs
+            - saga
+            max_iter:
+            - 500
+    outs:
+    - path: mlflow.db
+      hash: md5
+      md5: ed72e506742d6b550b733510b88c6e00
+      size: 217088
