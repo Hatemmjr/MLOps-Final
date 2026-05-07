@@ -234,7 +234,7 @@ def _predict_single(record: ChurnRecord) -> PredictionResponse:
     if _model_state["model"] is None or _model_state["status"] != "ready":
         raise HTTPException(status_code=503, detail="Model not available")
 
-    df = pd.DataFrame([record.dict()])
+    df = pd.DataFrame([record.model_dump()])
 
     # Apply preprocessing (ColumnTransformer: scale numerics + one-hot encode categoricals)
     preprocessor = _model_state["preprocessor"]
