@@ -39,7 +39,8 @@ dvc remote add -d myremote /tmp/dvc-remote
 dvc repro
 ```
 
-This generates all data artifacts automatically (synthetic Telco dataset included).
+This runs the full pipeline: `prepare → preprocess → featurize → train`.
+The real Telco CSV must be present at `data/raw/telco_churn.csv`.
 
 ### 3. Train Models
 

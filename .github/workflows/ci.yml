@@ -94,7 +94,7 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Generate synthetic dataset for CI
+      - name: Prepare dataset (requires real CSV in repo)
         run: python -m src.data.prepare
 
       - name: Run data schema tests

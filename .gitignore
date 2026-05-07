@@ -4,13 +4,13 @@ env/
 __pycache__/
 *.pyc
 
-# Data and Models
-/data/
+# Data and Models — generated artifacts only; real raw CSV is tracked by Git
+data/processed/
+data/splits/
 mlartifacts/
 mlruns/
 mlflow.db
 *.zip
-*.csv
 *.joblib
 *.pkl
 
