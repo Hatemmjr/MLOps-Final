@@ -12,6 +12,8 @@ import pandas as pd
 import yaml
 from sklearn.metrics import accuracy_score, roc_auc_score
 
+from src.data.feature_selection import drop_low_signal_single
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 log = logging.getLogger(__name__)
 
@@ -36,6 +38,9 @@ def evaluate_model(model, params: dict) -> dict:
     target = dp["target_column"]
     X_test = test_df.drop(columns=[target])
     y_test = test_df[target]
+
+    # Apply same feature selection used during training
+    X_test = drop_low_signal_single(X_test)
 
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1]

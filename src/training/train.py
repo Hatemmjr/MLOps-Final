@@ -44,16 +44,11 @@ from sklearn.metrics import (
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from xgboost import XGBClassifier
 
+from src.data.feature_selection import drop_low_signal  # noqa: E402
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 log = logging.getLogger(__name__)
 optuna.logging.set_verbosity(optuna.logging.WARNING)
-
-# Features identified as near-zero correlation with Churn via Chi-Squared test
-# (reference: Kaggle Telco Churn notebook EDA — correlation < |0.1|)
-LOW_SIGNAL_FEATURES = [
-    "gender", "PhoneService", "MultipleLines",
-    "InternetService", "StreamingTV", "StreamingMovies",
-]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -75,20 +70,6 @@ def load_splits(params: dict):
     X_test = test_df.drop(columns=[target])
     y_test = test_df[target]
     return X_train, y_train, X_test, y_test
-
-
-def drop_low_signal(X_train: pd.DataFrame, X_test: pd.DataFrame):
-    """
-    Drop features whose one-hot-encoded columns match the low-signal prefix list.
-    Works whether features are raw names or one-hot names like 'cat__gender_Male'.
-    """
-    drop_cols = [
-        c for c in X_train.columns
-        if any(feat in c for feat in LOW_SIGNAL_FEATURES)
-    ]
-    if drop_cols:
-        log.info("Dropping %d low-signal columns: %s", len(drop_cols), drop_cols)
-    return X_train.drop(columns=drop_cols), X_test.drop(columns=drop_cols)
 
 
 def best_threshold(model, X_train: pd.DataFrame, y_train, seed: int) -> float:
