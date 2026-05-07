@@ -17,7 +17,7 @@ import yaml
 from fastapi import FastAPI, HTTPException
 from mlflow import MlflowClient
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 log = logging.getLogger(__name__)
@@ -163,14 +163,14 @@ class ChurnRecord(BaseModel):
     MonthlyCharges: float
     TotalCharges: float
 
-    @validator("tenure", "MonthlyCharges", "TotalCharges")
+    @field_validator("tenure", "MonthlyCharges", "TotalCharges")
     @classmethod
     def must_be_non_negative(cls, v):
         if v < 0:
             raise ValueError("Feature must be non-negative")
         return v
 
-    @validator("SeniorCitizen")
+    @field_validator("SeniorCitizen")
     @classmethod
     def senior_binary(cls, v):
         if v not in (0, 1):

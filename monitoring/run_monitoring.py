@@ -14,8 +14,8 @@ import pathlib
 import numpy as np
 import pandas as pd
 import yaml
-from evidently import Report
-from evidently.presets import DataDriftPreset, DataSummaryPreset
+from evidently.report import Report
+from evidently.metric_preset import DataDriftPreset, DataQualityPreset
 from prometheus_client import (
     CollectorRegistry,
     Counter,
@@ -51,16 +51,16 @@ def generate_report(
     report = Report(
         metrics=[
             DataDriftPreset(),
-            DataSummaryPreset(),
+            DataQualityPreset(),
         ]
     )
-    snapshot = report.run(reference_data=reference, current_data=current)
+    report.run(reference_data=reference, current_data=current)
 
     out_path = reports_dir / f"{report_name}.html"
-    snapshot.save_html(str(out_path))
+    report.save_html(str(out_path))
     log.info("Report saved to %s", out_path)
 
-    return snapshot.dict()
+    return report.as_dict()
 
 
 def parse_drift_results(report_dict: dict, params: dict) -> tuple[float, list[str]]:
