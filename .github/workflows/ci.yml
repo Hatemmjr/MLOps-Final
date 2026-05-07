@@ -94,7 +94,13 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Prepare dataset (requires real CSV in repo)
+      - name: Pull raw data from Cloudflare R2 (DVC)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: dvc pull data/raw/telco_churn.csv --no-run-cache
+
+      - name: Prepare dataset
         run: python -m src.data.prepare
 
       - name: Run data schema tests
@@ -123,6 +129,12 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Pull raw data from Cloudflare R2 (DVC)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: dvc pull data/raw/telco_churn.csv --no-run-cache
 
       - name: Run full pipeline (prepare → preprocess → featurize)
         run: |

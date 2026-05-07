@@ -4,9 +4,8 @@ env/
 __pycache__/
 *.pyc
 
-# Data and Models — generated artifacts only; real raw CSV is tracked by Git
-data/processed/
-data/splits/
+# Data and Models — generated artifacts only; raw CSV is tracked by DVC, not Git
+data/raw/*.csv
 mlartifacts/
 mlruns/
 mlflow.db

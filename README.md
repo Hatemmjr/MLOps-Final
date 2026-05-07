@@ -9,8 +9,24 @@
 ## Quickstart 
 
 ```bash
+# 1. Clone & set up environment
+git clone https://github.com/Hatemmjr/MLOps-Final.git
+cd MLOps-Final
+python3 -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+export PYTHONPATH=.               # Windows: set PYTHONPATH=.
+
+# 2. Pull raw data from DVC remote (Cloudflare R2)
+# Set your R2 credentials first:
+#   export AWS_ACCESS_KEY_ID=<your-key>
+#   export AWS_SECRET_ACCESS_KEY=<your-secret>
+dvc pull
+
+# 3. Run the full training pipeline
 dvc repro
+
+# 4. Start the serving app
 uvicorn src.serving.app:app --host 0.0.0.0 --port 8000
 ```
 
