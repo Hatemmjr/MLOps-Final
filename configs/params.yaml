@@ -54,23 +54,42 @@ training:
   model_name: telco-churn-model
   cv_folds: 5
   scoring_metric: roc_auc
-  n_optuna_trials: 30
-  optuna_timeout: 300   # seconds
+  n_optuna_trials: 50       # increased from 30 — more exploration
+  optuna_timeout: 600       # seconds per model
+
+  # Ranges used by suggest_float / suggest_int (not categorical lists)
+  logistic_regression:
+    C_min: 0.001
+    C_max: 100
+    max_iter_min: 200
+    max_iter_max: 1000
+    solvers: [lbfgs, saga]
 
   random_forest:
-    n_estimators: [100, 200, 300]
-    max_depth: [5, 10, 15, null]
-    min_samples_split: [2, 5, 10]
+    n_estimators_min: 100
+    n_estimators_max: 500
+    max_depth_min: 4
+    max_depth_max: 20
+    min_samples_split_min: 2
+    min_samples_split_max: 20
 
   gradient_boosting:
-    n_estimators: [100, 200]
-    learning_rate: [0.05, 0.1, 0.2]
-    max_depth: [3, 5, 7]
+    n_estimators_min: 100
+    n_estimators_max: 400
+    learning_rate_min: 0.01
+    learning_rate_max: 0.3
+    max_depth_min: 3
+    max_depth_max: 8
 
-  logistic_regression:
-    C: [0.01, 0.1, 1.0, 10.0]
-    solver: [lbfgs, saga]
-    max_iter: [500]
+  xgboost:
+    n_estimators_min: 100
+    n_estimators_max: 500
+    learning_rate_min: 0.01
+    learning_rate_max: 0.3
+    max_depth_min: 3
+    max_depth_max: 9
+    subsample_min: 0.5
+    subsample_max: 1.0
 
 # --------------- MLflow --------------------------------------
 mlflow:
