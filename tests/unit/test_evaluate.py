@@ -124,7 +124,10 @@ def test_load_production_model_calls_mlflow(tmp_path):
 
     mock_model = _mock_model()
     with patch("src.evaluation.evaluate.mlflow.set_tracking_uri") as mock_uri, \
-         patch("src.evaluation.evaluate.mlflow.sklearn.load_model", return_value=mock_model) as mock_load:
+         patch(
+             "src.evaluation.evaluate.mlflow.sklearn.load_model",
+             return_value=mock_model,
+         ) as mock_load:
 
         result = evaluate.load_production_model(PARAMS)
 
