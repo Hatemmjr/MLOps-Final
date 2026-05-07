@@ -5,7 +5,6 @@ All MLflow and filesystem calls are mocked — no live server or real model need
 
 import numpy as np
 import pandas as pd
-import pytest
 from unittest.mock import MagicMock, patch
 
 

@@ -5,8 +5,7 @@ All MLflow I/O and Optuna calls are mocked to run instantly without a server.
 
 import numpy as np
 import pandas as pd
-import pytest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 
 # ─── Shared fixtures ──────────────────────────────────────────────────────────

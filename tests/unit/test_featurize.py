@@ -4,12 +4,9 @@ Covers: reference/production split, drift injection, and the full main() run.
 No real dataset required — all inputs are synthetic DataFrames.
 """
 
-import pathlib
-
 import joblib
 import numpy as np
 import pandas as pd
-import pytest
 
 from src.features.featurize import create_reference_production_split, inject_drift
 
