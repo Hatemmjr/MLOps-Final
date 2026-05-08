@@ -44,80 +44,70 @@ CUSTOM_CSS = """
     }
 
     .stApp {
-        background: radial-gradient(circle at 15% 50%, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        color: #e0e0e0;
+        background: #f4f5f7;
+        color: #333333;
     }
 
     /* Hide default Streamlit headers/footers */
     header {visibility: hidden;}
     footer {visibility: hidden;}
 
-    /* Sidebar Glassmorphism */
+    /* Sidebar */
     [data-testid="stSidebar"] {
-        background: rgba(15, 52, 96, 0.4) !important;
-        backdrop-filter: blur(12px) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        background: #ffffff !important;
+        border-right: 1px solid #e0e0e0;
     }
 
-    /* Custom Neon Metric Cards */
+    /* Custom Vodafone Metric Cards */
     .glass-metric {
-        background: rgba(22, 33, 62, 0.6);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-top: 2px solid #00f2fe; /* Neon Cyan glow */
-        border-radius: 12px;
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-top: 3px solid #E60000; /* Vodafone Red */
+        border-radius: 8px;
         padding: 20px;
         margin-bottom: 20px;
         transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
     .glass-metric:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 242, 254, 0.2);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px rgba(230, 0, 0, 0.15);
     }
     .glass-metric-magenta {
-        border-top: 2px solid #f093fb; /* Neon Magenta */
+        border-top: 3px solid #333333; /* Dark Grey */
     }
     .glass-metric-magenta:hover {
-        box-shadow: 0 10px 20px rgba(240, 147, 251, 0.2);
+        box-shadow: 0 8px 15px rgba(51, 51, 51, 0.15);
     }
     .metric-title {
         font-size: 0.9rem;
-        color: #8fa1c4;
+        color: #666666;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
+        letter-spacing: 1.2px;
         margin-bottom: 5px;
     }
     .metric-value {
         font-size: 2.2rem;
         font-weight: 700;
-        color: #ffffff;
-        background: -webkit-linear-gradient(45deg, #00f2fe, #4facfe);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #E60000;
     }
     .metric-value-magenta {
-        background: -webkit-linear-gradient(45deg, #f093fb, #f5576c);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #333333;
     }
     .metric-subtitle {
         font-size: 0.85rem;
-        color: #64748b;
+        color: #999999;
         margin-top: 5px;
     }
 
     /* Headers */
     h1, h2, h3 {
-        color: #ffffff !important;
+        color: #333333 !important;
         font-weight: 600 !important;
         letter-spacing: -0.5px;
     }
     h1 {
-        background: -webkit-linear-gradient(45deg, #00f2fe, #4facfe);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #E60000 !important;
         margin-bottom: 30px !important;
     }
 
@@ -127,15 +117,16 @@ CUSTOM_CSS = """
     }
     [data-baseweb="tab"] {
         background: transparent !important;
-        border-radius: 8px !important;
-        color: #a0aec0 !important;
+        border-radius: 4px !important;
+        color: #666666 !important;
         padding: 10px 20px !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
+        border: 1px solid #e0e0e0 !important;
     }
     [data-baseweb="tab"][aria-selected="true"] {
-        background: rgba(0, 242, 254, 0.1) !important;
-        color: #00f2fe !important;
-        border-color: #00f2fe !important;
+        background: #fcebeb !important;
+        color: #E60000 !important;
+        border-color: #E60000 !important;
+        font-weight: 600;
     }
 </style>
 """
@@ -175,7 +166,7 @@ mlflow.set_tracking_uri(MLFLOW_URI)
 client = MlflowClient()
 
 # Set default plotly dark template
-pio.templates.default = "plotly_dark"
+pio.templates.default = "plotly_white"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -321,9 +312,11 @@ if page.startswith("🚀"):
                     y=rois,
                     title="ROI Sensitivity by Success Rate",
                     labels={"x": "Campaign Success Rate (%)", "y": "Net ROI ($)"},
-                    color_discrete_sequence=["#00f2fe"],
+                    color_discrete_sequence=["#E60000"],
                 )
-                fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                fig.update_layout(
+                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -346,9 +339,11 @@ elif page.startswith("📊"):
                     path=["Contract", PARAMS["data"]["target_column"]],
                     title="Churn Breakdown by Contract Type",
                     color=PARAMS["data"]["target_column"],
-                    color_continuous_scale=["#00f2fe", "#f093fb"],
+                    color_continuous_scale=["#E60000", "#333333"],
                 )
-                fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                fig.update_layout(
+                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
         with c2:
@@ -359,10 +354,12 @@ elif page.startswith("📊"):
                     color=PARAMS["data"]["target_column"],
                     barmode="group",
                     title="Churn by Payment Method",
-                    color_discrete_sequence=["#00f2fe", "#f093fb"],
+                    color_discrete_sequence=["#E60000", "#333333"],
                 )
                 fig2.update_layout(
-                    plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", xaxis_tickangle=-45
+                    plot_bgcolor="rgba(255,255,255,0)",
+                    paper_bgcolor="rgba(255,255,255,0)",
+                    xaxis_tickangle=-45,
                 )
                 st.plotly_chart(fig2, use_container_width=True)
 
@@ -376,9 +373,11 @@ elif page.startswith("📊"):
                     y="MonthlyCharges",
                     color=PARAMS["data"]["target_column"],
                     title="Monthly Charges Distribution",
-                    color_discrete_sequence=["#00f2fe", "#f093fb"],
+                    color_discrete_sequence=["#E60000", "#333333"],
                 )
-                fig_box.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                fig_box.update_layout(
+                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                )
                 st.plotly_chart(fig_box, use_container_width=True)
         with c4:
             cols = ["tenure", "MonthlyCharges", "TotalCharges"]
@@ -388,9 +387,11 @@ elif page.startswith("📊"):
                     corr,
                     text_auto=True,
                     title="Numeric Correlation",
-                    color_continuous_scale="Purpor",
+                    color_continuous_scale="Reds",
                 )
-                fig_corr.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                fig_corr.update_layout(
+                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                )
                 st.plotly_chart(fig_corr, use_container_width=True)
 
         st.markdown("### Production Feature Distribution (Live via Prometheus)")
@@ -413,9 +414,11 @@ elif page.startswith("📊"):
                         x=[str(k) for k in le_keys],
                         y=counts,
                         title="MonthlyCharges (Live Requests)",
-                        color_discrete_sequence=["#f093fb"],
+                        color_discrete_sequence=["#333333"],
                     )
-                    fig3.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                    fig3.update_layout(
+                        plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                    )
                     st.plotly_chart(fig3, use_container_width=True)
 
         with tenure_col:
@@ -434,9 +437,11 @@ elif page.startswith("📊"):
                         x=[str(k) for k in le_keys],
                         y=counts,
                         title="Tenure (Live Requests)",
-                        color_discrete_sequence=["#00f2fe"],
+                        color_discrete_sequence=["#E60000"],
                     )
-                    fig4.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                    fig4.update_layout(
+                        plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                    )
                     st.plotly_chart(fig4, use_container_width=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -477,15 +482,17 @@ elif page.startswith("🔬"):
                     color="Metric",
                     barmode="group",
                     title="Best Models by Metric",
-                    color_discrete_sequence=["#00f2fe", "#f093fb", "#a200ff", "#00ff88"],
+                    color_discrete_sequence=["#E60000", "#333333", "#666666", "#999999"],
                 )
-                fig_bar.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                fig_bar.update_layout(
+                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                )
                 st.plotly_chart(fig_bar, use_container_width=True)
 
             with c2:
                 categories = ["AUC", "F1", "Recall", "Precision"]
                 fig_radar = go.Figure()
-                colors = ["#00f2fe", "#f093fb", "#a200ff", "#00ff88", "#ffff00", "#ff00ff"]
+                colors = ["#E60000", "#333333", "#666666", "#999999", "#CCCCCC", "#000000"]
                 for i, row in best_models.iterrows():
                     fig_radar.add_trace(
                         go.Scatterpolar(
@@ -500,7 +507,7 @@ elif page.startswith("🔬"):
                     polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
                     showlegend=True,
                     title="Radar Chart Comparison",
-                    paper_bgcolor="rgba(0,0,0,0)",
+                    paper_bgcolor="rgba(255,255,255,0)",
                 )
                 st.plotly_chart(fig_radar, use_container_width=True)
         else:
@@ -539,7 +546,7 @@ elif page.startswith("📈"):
                         y=df_runs["AUC"],
                         mode="lines+markers",
                         name="ROC AUC",
-                        line=dict(color="#00f2fe", width=3),
+                        line=dict(color="#E60000", width=3),
                     )
                 )
                 fig.add_trace(
@@ -548,13 +555,13 @@ elif page.startswith("📈"):
                         y=df_runs["F1"],
                         mode="lines+markers",
                         name="F1 Score",
-                        line=dict(color="#f093fb", width=3),
+                        line=dict(color="#333333", width=3),
                     )
                 )
                 fig.update_layout(
                     title="Metric Evolution Over Optuna Trials",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(255,255,255,0)",
+                    paper_bgcolor="rgba(255,255,255,0)",
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -580,10 +587,12 @@ elif page.startswith("📈"):
                     labels=dict(x="Predicted", y="Actual"),
                     x=["No Churn", "Churn"],
                     y=["No Churn", "Churn"],
-                    color_continuous_scale="Blues",
+                    color_continuous_scale="Reds",
                     title="Estimated Matrix (1000 samples)",
                 )
-                fig_cm.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                fig_cm.update_layout(
+                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                )
                 st.plotly_chart(fig_cm, use_container_width=True)
 
             # Try to plot feature importances if XGB/LGBM is loaded locally
@@ -612,12 +621,12 @@ elif page.startswith("📈"):
                         y="Feature",
                         orientation="h",
                         title="Top 15 Important Features",
-                        color_discrete_sequence=["#00f2fe"],
+                        color_discrete_sequence=["#E60000"],
                     )
                     fig_imp.update_layout(
                         yaxis={"categoryorder": "total ascending"},
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(255,255,255,0)",
+                        paper_bgcolor="rgba(255,255,255,0)",
                     )
                     st.plotly_chart(fig_imp, use_container_width=True)
                 else:
@@ -649,7 +658,7 @@ elif page.startswith("📉"):
                     y="drift_fraction",
                     color="report",
                     title="Historical Drift Fraction",
-                    color_discrete_sequence=["#00f2fe", "#f093fb"],
+                    color_discrete_sequence=["#E60000", "#333333"],
                 )
                 fig.add_hline(
                     y=PARAMS["monitoring"]["drift_threshold"],
@@ -657,7 +666,9 @@ elif page.startswith("📉"):
                     line_color="#ff4b4b",
                     annotation_text="Alert Threshold",
                 )
-                fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                fig.update_layout(
+                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("### Interactive Evidently Reports")
