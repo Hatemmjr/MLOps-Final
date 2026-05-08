@@ -27,6 +27,7 @@ evidently==0.4.30
 prometheus-client==0.20.0
 streamlit==1.34.0
 plotly==5.22.0
+psutil==5.9.8
 
 # ── Testing ───────────────────────────────────────────────────────────────────
 pytest==8.2.0

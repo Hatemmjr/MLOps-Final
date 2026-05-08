@@ -1,28 +1,164 @@
 """
-Streamlit Monitoring Dashboard for MLOps Final Project.
-Unifies MLflow, Evidently, Prometheus metrics, and Business KPIs.
+Premium Streamlit Monitoring Dashboard for MLOps Final Project.
+Unifies MLflow, Evidently, Prometheus metrics, and Business KPIs
+with a Glassmorphism Neon UI and advanced Plotly analytics.
 """
 
+import datetime
 import json
 import pathlib
 import subprocess
+import yaml
 
+import joblib
 import mlflow
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import psutil
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
-import yaml
 from mlflow.tracking import MlflowClient
 from prometheus_client.parser import text_string_to_metric_families
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Streamlit Config
+# ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Telco Churn Monitoring",
-    page_icon="📡",
+    page_title="Telco Churn Analytics",
+    page_icon="⚡",
     layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Premium CSS Injection (Glassmorphism + Neon)
+# ─────────────────────────────────────────────────────────────────────────────
+CUSTOM_CSS = """
+<style>
+    /* Global Background and Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif !important;
+    }
+    
+    .stApp {
+        background: radial-gradient(circle at 15% 50%, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        color: #e0e0e0;
+    }
+
+    /* Hide default Streamlit headers/footers */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+
+    /* Sidebar Glassmorphism */
+    [data-testid="stSidebar"] {
+        background: rgba(15, 52, 96, 0.4) !important;
+        backdrop-filter: blur(12px) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Custom Neon Metric Cards */
+    .glass-metric {
+        background: rgba(22, 33, 62, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 2px solid #00f2fe; /* Neon Cyan glow */
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    .glass-metric:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 242, 254, 0.2);
+    }
+    .glass-metric-magenta {
+        border-top: 2px solid #f093fb; /* Neon Magenta */
+    }
+    .glass-metric-magenta:hover {
+        box-shadow: 0 10px 20px rgba(240, 147, 251, 0.2);
+    }
+    .metric-title {
+        font-size: 0.9rem;
+        color: #8fa1c4;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 5px;
+    }
+    .metric-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #ffffff;
+        background: -webkit-linear-gradient(45deg, #00f2fe, #4facfe);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .metric-value-magenta {
+        background: -webkit-linear-gradient(45deg, #f093fb, #f5576c);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .metric-subtitle {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 5px;
+    }
+    
+    /* Headers */
+    h1, h2, h3 {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.5px;
+    }
+    h1 {
+        background: -webkit-linear-gradient(45deg, #00f2fe, #4facfe);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 30px !important;
+    }
+    
+    /* Tabs styling */
+    [data-baseweb="tab-list"] {
+        gap: 20px;
+    }
+    [data-baseweb="tab"] {
+        background: transparent !important;
+        border-radius: 8px !important;
+        color: #a0aec0 !important;
+        padding: 10px 20px !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+    }
+    [data-baseweb="tab"][aria-selected="true"] {
+        background: rgba(0, 242, 254, 0.1) !important;
+        color: #00f2fe !important;
+        border-color: #00f2fe !important;
+    }
+</style>
+"""
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Custom UI Components
+# ─────────────────────────────────────────────────────────────────────────────
+def render_metric(title: str, value: str, subtitle: str = "", color: str = "cyan"):
+    """Render a premium glassmorphic metric card."""
+    color_class = "glass-metric-magenta" if color == "magenta" else ""
+    val_class = "metric-value-magenta" if color == "magenta" else ""
+    
+    html = f"""
+    <div class="glass-metric {color_class}">
+        <div class="metric-title">{title}</div>
+        <div class="metric-value {val_class}">{value}</div>
+        <div class="metric-subtitle">{subtitle}</div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -33,356 +169,347 @@ def load_params(path: str = "configs/params.yaml") -> dict:
     with open(path) as f:
         return yaml.safe_load(f)
 
-
 PARAMS = load_params()
 MLFLOW_URI = PARAMS["mlflow"]["tracking_uri"]
 mlflow.set_tracking_uri(MLFLOW_URI)
 client = MlflowClient()
 
+# Set default plotly dark template
+import plotly.io as pio
+pio.templates.default = "plotly_dark"
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Sidebar Navigation
 # ─────────────────────────────────────────────────────────────────────────────
-st.sidebar.title("📡 MLOps Command Center")
-page = st.sidebar.radio(
-    "Navigation",
-    [
-        "1. 🚦 System Overview",
-        "2. 📈 Model Performance",
-        "3. 📉 Data Drift",
-        "4. 💰 Business Impact",
-        "5. 🛠️ Controls",
-    ],
-)
+with st.sidebar:
+    st.markdown("<h1>⚡ MLOps Center</h1>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color:rgba(255,255,255,0.1);'/>", unsafe_allow_html=True)
+    
+    page = st.radio(
+        "",
+        [
+            "🚀 Executive Overview",
+            "📊 Analytics & Insights",
+            "📈 Model Performance",
+            "📉 Data Drift",
+            "💻 System Health",
+        ],
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 1. System Overview (FastAPI + Prometheus)
+# Helper: Fetch Prometheus
 # ─────────────────────────────────────────────────────────────────────────────
-if page.startswith("1"):
-    st.title("🚦 System Health & API Metrics")
+def fetch_prometheus():
+    host = PARAMS["serving"]["host"]
+    if host == "0.0.0.0": host = "localhost"
+    port = PARAMS["monitoring"]["prometheus_port"]
     
-    col1, col2, col3 = st.columns(3)
-    
-    # ── Fetch from FastAPI /health ──
+    metrics_dict = {}
     try:
-        host = PARAMS["serving"]["host"]
-        if host == "0.0.0.0":
-            host = "localhost"
-        port = PARAMS["serving"]["port"]
-        r = requests.get(f"http://{host}:{port}/health", timeout=2)
+        r = requests.get(f"http://{host}:{port}/", timeout=2)
         if r.status_code == 200:
-            data = r.json()
-            col1.metric("API Status", "✅ Online")
-            col2.metric("Active Model", data.get("model_name", "Unknown"))
-            col3.metric("Model Stage", data.get("model_version", "Unknown"))
-        else:
-            col1.metric("API Status", "❌ Error")
-            st.error(f"Healthcheck failed: {r.status_code}")
-    except requests.exceptions.RequestException:
-        col1.metric("API Status", "❌ Offline")
-        st.warning(f"Could not connect to FastAPI at http://{host}:{port}/health. Is it running?")
-
-    st.divider()
-    
-    # ── Fetch Prometheus Metrics ──
-    st.subheader("Real-time Inference Metrics")
-    try:
-        prom_port = PARAMS["monitoring"]["prometheus_port"]
-        r = requests.get(f"http://{host}:{prom_port}/", timeout=2)
-        
-        if r.status_code == 200:
-            # Parse Prometheus text format
-            metrics_dict = {}
             for family in text_string_to_metric_families(r.text):
                 metrics_dict[family.name] = family
-                
-            colA, colB = st.columns(2)
-            
-            # Inference Count Counter
-            if "inference_count" in metrics_dict:
-                count_metrics = metrics_dict["inference_count"].samples
-                churn_cnt = sum([s.value for s in count_metrics if s.labels.get("predicted_class") == "1"])
-                nochurn_cnt = sum([s.value for s in count_metrics if s.labels.get("predicted_class") == "0"])
-                
-                fig = px.pie(
-                    values=[nochurn_cnt, churn_cnt], 
-                    names=["No Churn", "Churn"],
-                    title="Predictions Made",
-                    hole=0.4,
-                    color_discrete_sequence=["#00CC96", "#EF553B"]
-                )
-                colA.plotly_chart(fig, use_container_width=True)
-            
-            # Confidence Histogram
-            if "prediction_confidence" in metrics_dict:
-                hist_samples = metrics_dict["prediction_confidence"].samples
-                # Extract buckets
-                buckets = {}
-                for s in hist_samples:
-                    if "le" in s.labels and s.labels["le"] != "+Inf":
-                        buckets[float(s.labels["le"])] = s.value
-                
-                if buckets:
-                    # Convert cumulative to absolute
-                    le_keys = sorted(buckets.keys())
-                    counts = []
-                    prev = 0
-                    for k in le_keys:
-                        counts.append(buckets[k] - prev)
-                        prev = buckets[k]
-                        
-                    fig2 = px.bar(
-                        x=[str(k) for k in le_keys], 
-                        y=counts,
-                        labels={"x": "Confidence <= x", "y": "Count"},
-                        title="Prediction Confidence Distribution"
-                    )
-                    colB.plotly_chart(fig2, use_container_width=True)
-                    
-        else:
-            st.error(f"Failed to fetch metrics: {r.status_code}")
     except requests.exceptions.RequestException:
-        st.warning(f"Prometheus metrics endpoint (http://{host}:{prom_port}/) is unreachable.")
+        pass
+    return metrics_dict
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 2. Model Performance (MLflow)
+# 1. Executive Overview
 # ─────────────────────────────────────────────────────────────────────────────
-elif page.startswith("2"):
-    st.title("📈 Model Performance KPIs")
+if page.startswith("🚀"):
+    st.title("Executive Overview")
     
-    # Get all experiments
-    try:
-        exp = client.get_experiment_by_name(PARAMS["training"]["experiment_name"])
-        if exp:
-            runs = client.search_runs(exp.experiment_id)
-            if not runs:
-                st.warning("No MLflow runs found.")
-            else:
-                data = []
-                for r in runs:
-                    metrics = r.data.metrics
-                    params = r.data.params
-                    tags = r.data.tags
-                    
-                    data.append({
-                        "Run ID": r.info.run_id,
-                        "Name": tags.get("mlflow.runName", "unnamed"),
-                        "Status": r.info.status,
-                        "AUC": metrics.get("roc_auc", 0.0),
-                        "F1": metrics.get("f1", 0.0),
-                        "Recall": metrics.get("recall", 0.0),
-                        "Precision": metrics.get("precision", 0.0),
-                        "Threshold": metrics.get("threshold", 0.0),
-                        "Time": pd.to_datetime(r.info.start_time, unit="ms")
-                    })
-                
-                df_runs = pd.DataFrame(data).sort_values("Time")
-                
-                # Show Best Run overall
-                best_run = df_runs.loc[df_runs["AUC"].idxmax()]
-                
-                st.subheader(f"Best Model (AUC: {best_run['AUC']:.4f})")
-                c1, c2, c3, c4 = st.columns(4)
-                c1.metric("ROC AUC", f"{best_run['AUC']:.4f}")
-                c2.metric("F1 Score", f"{best_run['F1']:.4f}")
-                c3.metric("Recall", f"{best_run['Recall']:.4f}")
-                c4.metric("Opt. Threshold", f"{best_run['Threshold']:.2f}")
-                
-                st.divider()
-                
-                # Trend charts
-                st.subheader("Training History Trends")
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(x=df_runs["Time"], y=df_runs["AUC"], mode='lines+markers', name='ROC AUC'))
-                fig.add_trace(go.Scatter(x=df_runs["Time"], y=df_runs["F1"], mode='lines+markers', name='F1 Score'))
-                fig.add_trace(go.Scatter(x=df_runs["Time"], y=df_runs["Recall"], mode='lines+markers', name='Recall'))
-                fig.update_layout(height=400, hovermode="x unified")
-                st.plotly_chart(fig, use_container_width=True)
-                
-                st.subheader("All Runs")
-                st.dataframe(df_runs.sort_values("AUC", ascending=False).drop(columns=["Time"]), hide_index=True)
-                
-        else:
-            st.error(f"Experiment '{PARAMS['training']['experiment_name']}' not found in MLflow.")
+    metrics = fetch_prometheus()
+    
+    # ── KPI Cards ──
+    col1, col2, col3, col4 = st.columns(4)
+    
+    # Production Model
+    exp = client.get_experiment_by_name(PARAMS["training"]["experiment_name"])
+    best_auc = 0.0
+    if exp:
+        runs = client.search_runs(exp.experiment_id)
+        if runs:
+            best_auc = max(runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0)).data.metrics.get("roc_auc", 0.0)
             
-    except Exception as e:
-        st.error(f"Error connecting to MLflow: {e}")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 3. Data Drift (Evidently)
-# ─────────────────────────────────────────────────────────────────────────────
-elif page.startswith("3"):
-    st.title("📉 Degradation & Data Drift")
+    with col1:
+        render_metric("Prod Model AUC", f"{best_auc:.4f}", "Latest version in Registry")
+        
+    # Inference Count
+    churn_cnt, nochurn_cnt = 0, 0
+    if "inference_count" in metrics:
+        count_metrics = metrics["inference_count"].samples
+        churn_cnt = sum([s.value for s in count_metrics if s.labels.get("predicted_class") == "1"])
+        nochurn_cnt = sum([s.value for s in count_metrics if s.labels.get("predicted_class") == "0"])
     
+    with col2:
+        render_metric("Total Inferences", f"{int(churn_cnt + nochurn_cnt):,}", "Real-time API Requests", color="magenta")
+        
+    # CPU Usage
+    with col3:
+        render_metric("System CPU", f"{psutil.cpu_percent()}%", "Host Server Utilization")
+        
+    # Drift
+    drift_status = "0.0%"
     log_path = pathlib.Path(PARAMS["monitoring"]["log_path"])
-    reports_dir = pathlib.Path(PARAMS["monitoring"]["reports_dir"])
-    
-    # Read Drift Log
-    st.subheader("Drift Alert History")
     if log_path.exists():
         with open(log_path, "r") as f:
             logs = [json.loads(line) for line in f if line.strip()]
-            
-        if logs:
-            df_logs = pd.DataFrame(logs)
-            df_logs["timestamp"] = pd.to_datetime(df_logs["timestamp"])
-            
-            fig = px.bar(
-                df_logs, 
-                x="timestamp", 
-                y="drift_fraction", 
-                color="report",
-                title="Drift Fraction History (>20% threshold)",
-                labels={"drift_fraction": "Drifted Features %"}
-            )
-            fig.add_hline(y=PARAMS["monitoring"]["drift_threshold"], line_dash="dash", line_color="red", annotation_text="Threshold")
-            st.plotly_chart(fig, use_container_width=True)
-            
-            st.dataframe(df_logs)
-        else:
-            st.success("No drift alerts recorded yet.")
-    else:
-        st.info("Drift log file does not exist yet. Run the monitoring job.")
+            if logs:
+                drift_status = f"{logs[-1]['drift_fraction']*100:.1f}%"
+    with col4:
+        render_metric("Current Drift", drift_status, "Features exceeding threshold", color="magenta")
 
-    st.divider()
-
-    # Embed HTML reports
-    st.subheader("Evidently Interactive Reports")
-    tab1, tab2 = st.tabs(["Baseline (Test Set)", "Drift (Production Set)"])
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    with tab1:
-        baseline_html = reports_dir / "baseline_report.html"
-        if baseline_html.exists():
-            with open(baseline_html, "r") as f:
-                html_data = f.read()
-            components.html(html_data, height=1000, scrolling=True)
-        else:
-            st.warning("baseline_report.html not found.")
+    # ── ROI Simulator ──
+    st.markdown("### 💰 Projected Revenue Impact")
+    prod_path = pathlib.Path(PARAMS["data"]["production_path"])
+    if prod_path.exists():
+        df_prod = pd.read_csv(prod_path)
+        if "TotalCharges" in df_prod.columns:
+            actual_churners = df_prod[df_prod[PARAMS["data"]["target_column"]] == 1]
+            total_risk = actual_churners["TotalCharges"].sum()
             
-    with tab2:
-        drift_html = reports_dir / "drift_report.html"
-        if drift_html.exists():
-            with open(drift_html, "r") as f:
-                html_data = f.read()
-            components.html(html_data, height=1000, scrolling=True)
-        else:
-            st.warning("drift_report.html not found.")
-
+            c1, c2 = st.columns([1, 2])
+            with c1:
+                st.markdown(f"**Total Revenue at Risk**: `${total_risk:,.0f}`")
+                success_rate = st.slider("Campaign Success Rate (%)", 5, 80, 25) / 100.0
+                cost = st.slider("Cost per Contact ($)", 10, 200, 50)
+                
+                recall, precision = 0.70, 0.60
+                if runs:
+                    best = max(runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0))
+                    recall = best.data.metrics.get("recall", 0.70)
+                    precision = best.data.metrics.get("precision", 0.60)
+                    
+                tp = int(len(actual_churners) * recall)
+                predicted = int(tp / precision)
+                revenue_saved = tp * actual_churners["TotalCharges"].mean() * success_rate
+                net_roi = revenue_saved - (predicted * cost)
+                
+                render_metric("Net ROI", f"${net_roi:,.0f}", f"Assuming {success_rate*100}% retention")
+                
+            with c2:
+                # Plot ROI sensitivity
+                rates = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+                rois = [(tp * actual_churners["TotalCharges"].mean() * r) - (predicted * cost) for r in rates]
+                fig = px.area(
+                    x=[r*100 for r in rates], y=rois, 
+                    title="ROI Sensitivity by Success Rate",
+                    labels={"x": "Campaign Success Rate (%)", "y": "Net ROI ($)"},
+                    color_discrete_sequence=["#00f2fe"]
+                )
+                fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig, use_container_width=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. Business Impact
+# 2. Analytics & Insights
 # ─────────────────────────────────────────────────────────────────────────────
-elif page.startswith("4"):
-    st.title("💰 Business ROI Simulator")
-    st.markdown("Simulate the financial impact of the model on the production cohort.")
+elif page.startswith("📊"):
+    st.title("Analytics & Insights")
+    st.markdown("Advanced analytics on production and predicted data.")
     
     prod_path = pathlib.Path(PARAMS["data"]["production_path"])
     if prod_path.exists():
         df_prod = pd.read_csv(prod_path)
-        target = PARAMS["data"]["target_column"]
         
-        if target in df_prod.columns and "TotalCharges" in df_prod.columns:
-            actual_churners = df_prod[df_prod[target] == 1]
-            total_risk = actual_churners["TotalCharges"].sum()
-            
-            st.info(f"**Current Production Cohort Size**: {len(df_prod):,} customers")
-            st.warning(f"**Total Revenue at Risk (Actual Churners)**: ${total_risk:,.2f}")
-            
-            st.divider()
-            
-            st.subheader("Retention Campaign Simulation")
-            col1, col2 = st.columns(2)
-            
-            success_rate = col1.slider(
-                "Expected Retention Campaign Success Rate (%)", 
-                min_value=5, max_value=80, value=25, step=5
-            ) / 100.0
-            
-            cost_per_contact = col2.number_input(
-                "Cost to contact/incentivize one customer ($)", 
-                min_value=0.0, max_value=500.0, value=50.0, step=10.0
-            )
-            
-            # Using MLflow best model stats to simulate predictions (simplified)
-            # In a real setup, we would run df_prod through the live model API.
-            # Here, we approximate based on the known Recall / Precision of the best run
-            exp = client.get_experiment_by_name(PARAMS["training"]["experiment_name"])
-            runs = client.search_runs(exp.experiment_id)
-            if runs:
-                best_run = max(runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0))
-                recall = best_run.data.metrics.get("recall", 0.70)
-                precision = best_run.data.metrics.get("precision", 0.60)
-            else:
-                recall = 0.70
-                precision = 0.60
+        c1, c2 = st.columns(2)
+        
+        with c1:
+            if "Contract" in df_prod.columns:
+                fig = px.sunburst(
+                    df_prod, path=["Contract", PARAMS["data"]["target_column"]], 
+                    title="Churn Breakdown by Contract Type",
+                    color=PARAMS["data"]["target_column"],
+                    color_continuous_scale=["#00f2fe", "#f093fb"]
+                )
+                fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig, use_container_width=True)
                 
-            predicted_churn_count = int((len(actual_churners) * recall) / precision)
-            true_positives = int(len(actual_churners) * recall)
+        with c2:
+            if "PaymentMethod" in df_prod.columns:
+                fig2 = px.histogram(
+                    df_prod, x="PaymentMethod", color=PARAMS["data"]["target_column"],
+                    barmode="group", title="Churn by Payment Method",
+                    color_discrete_sequence=["#00f2fe", "#f093fb"]
+                )
+                fig2.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", xaxis_tickangle=-45)
+                st.plotly_chart(fig2, use_container_width=True)
+                
+        st.markdown("### Production Feature Distribution (Live via Prometheus)")
+        metrics = fetch_prometheus()
+        mc_col, tenure_col = st.columns(2)
+        
+        with mc_col:
+            if "feature_monthly_charges" in metrics:
+                hist = metrics["feature_monthly_charges"].samples
+                buckets = {float(s.labels["le"]): s.value for s in hist if s.labels.get("le") != "+Inf"}
+                if buckets:
+                    le_keys = sorted(buckets.keys())
+                    counts = [buckets[k] - (buckets[le_keys[i-1]] if i>0 else 0) for i, k in enumerate(le_keys)]
+                    fig3 = px.bar(x=[str(k) for k in le_keys], y=counts, title="MonthlyCharges (Live Requests)", color_discrete_sequence=["#f093fb"])
+                    fig3.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                    st.plotly_chart(fig3, use_container_width=True)
+
+        with tenure_col:
+            if "feature_tenure" in metrics:
+                hist = metrics["feature_tenure"].samples
+                buckets = {float(s.labels["le"]): s.value for s in hist if s.labels.get("le") != "+Inf"}
+                if buckets:
+                    le_keys = sorted(buckets.keys())
+                    counts = [buckets[k] - (buckets[le_keys[i-1]] if i>0 else 0) for i, k in enumerate(le_keys)]
+                    fig4 = px.bar(x=[str(k) for k in le_keys], y=counts, title="Tenure (Live Requests)", color_discrete_sequence=["#00f2fe"])
+                    fig4.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                    st.plotly_chart(fig4, use_container_width=True)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. Model Performance
+# ─────────────────────────────────────────────────────────────────────────────
+elif page.startswith("📈"):
+    st.title("Model Performance")
+    
+    exp = client.get_experiment_by_name(PARAMS["training"]["experiment_name"])
+    if exp:
+        runs = client.search_runs(exp.experiment_id)
+        if runs:
+            # Table of runs
+            data = [{
+                "Name": r.data.tags.get("mlflow.runName", "unnamed"),
+                "AUC": r.data.metrics.get("roc_auc", 0.0),
+                "F1": r.data.metrics.get("f1", 0.0),
+                "Recall": r.data.metrics.get("recall", 0.0),
+                "Precision": r.data.metrics.get("precision", 0.0),
+                "Time": pd.to_datetime(r.info.start_time, unit="ms")
+            } for r in runs]
+            df_runs = pd.DataFrame(data).sort_values("Time")
             
-            # Average charge of a churner
-            avg_churn_val = actual_churners["TotalCharges"].mean()
-            
-            gross_saved = true_positives * avg_churn_val * success_rate
-            campaign_cost = predicted_churn_count * cost_per_contact
-            net_roi = gross_saved - campaign_cost
-            
-            st.markdown("### Simulated Outcomes")
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Predicted Churners to Contact", f"{predicted_churn_count:,}")
-            c2.metric("Campaign Cost", f"${campaign_cost:,.2f}")
-            
-            if net_roi > 0:
-                c3.metric("Net Revenue Saved (ROI)", f"${net_roi:,.2f}", "+ Profit")
-            else:
-                c3.metric("Net Revenue Saved (ROI)", f"${net_roi:,.2f}", "- Loss")
+            c1, c2 = st.columns([2, 1])
+            with c1:
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=df_runs["Time"], y=df_runs["AUC"], mode='lines+markers', name='ROC AUC', line=dict(color='#00f2fe', width=3)))
+                fig.add_trace(go.Scatter(x=df_runs["Time"], y=df_runs["F1"], mode='lines+markers', name='F1 Score', line=dict(color='#f093fb', width=3)))
+                fig.update_layout(title="Metric Evolution Over Optuna Trials", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig, use_container_width=True)
+                
+            with c2:
+                best = df_runs.loc[df_runs["AUC"].idxmax()]
+                render_metric("Best AUC", f"{best['AUC']:.4f}", f"Run: {best['Name']}")
+                render_metric("Best F1", f"{best['F1']:.4f}", "Post-threshold tuning", color="magenta")
+                render_metric("Best Recall", f"{best['Recall']:.4f}", "Catching churners")
+
+            # Try to plot feature importances if XGB/LGBM is loaded locally
+            st.markdown("### Global Feature Importance")
+            try:
+                # Get the actual model artifact path from the best run
+                best_run_obj = max(runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0))
+                model_uri = f"runs:/{best_run_obj.info.run_id}/model"
+                loaded_model = mlflow.sklearn.load_model(model_uri)
+                
+                if hasattr(loaded_model, "feature_importances_"):
+                    importances = loaded_model.feature_importances_
+                    # Needs feature names. Let's try to get them from the data schema or just plot top 20
+                    # Since preprocessor removes names, we might just have indices, but let's try
+                    if hasattr(loaded_model, "feature_names_in_"):
+                        feats = loaded_model.feature_names_in_
+                    else:
+                        feats = [f"Feature {i}" for i in range(len(importances))]
+                        
+                    df_imp = pd.DataFrame({"Feature": feats, "Importance": importances})
+                    df_imp = df_imp.sort_values("Importance", ascending=False).head(15)
+                    
+                    fig_imp = px.bar(df_imp, x="Importance", y="Feature", orientation='h', title="Top 15 Important Features", color_discrete_sequence=["#00f2fe"])
+                    fig_imp.update_layout(yaxis={'categoryorder':'total ascending'}, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                    st.plotly_chart(fig_imp, use_container_width=True)
+                else:
+                    st.info("Best model doesn't expose `feature_importances_`.")
+            except Exception as e:
+                st.info(f"Could not load feature importances: {e}")
                 
         else:
-            st.error("Production dataset must contain the target column and 'TotalCharges'.")
-    else:
-        st.warning("Production data not found.")
+            st.warning("No runs found in MLflow.")
+            
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Data Drift
+# ─────────────────────────────────────────────────────────────────────────────
+elif page.startswith("📉"):
+    st.title("Data Degradation & Drift")
+    
+    log_path = pathlib.Path(PARAMS["monitoring"]["log_path"])
+    reports_dir = pathlib.Path(PARAMS["monitoring"]["reports_dir"])
+    
+    if log_path.exists():
+        with open(log_path, "r") as f:
+            logs = [json.loads(line) for line in f if line.strip()]
+            if logs:
+                df_logs = pd.DataFrame(logs)
+                df_logs["timestamp"] = pd.to_datetime(df_logs["timestamp"])
+                fig = px.area(
+                    df_logs, x="timestamp", y="drift_fraction", color="report",
+                    title="Historical Drift Fraction",
+                    color_discrete_sequence=["#00f2fe", "#f093fb"]
+                )
+                fig.add_hline(y=PARAMS["monitoring"]["drift_threshold"], line_dash="dash", line_color="#ff4b4b", annotation_text="Alert Threshold")
+                fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig, use_container_width=True)
+                
+    st.markdown("### Interactive Evidently Reports")
+    tab1, tab2 = st.tabs(["Baseline (Holdout)", "Drift (Production)"])
+    
+    with tab1:
+        if (reports_dir / "baseline_report.html").exists():
+            with open(reports_dir / "baseline_report.html", "r") as f:
+                components.html(f.read(), height=1200, scrolling=True)
+    with tab2:
+        if (reports_dir / "drift_report.html").exists():
+            with open(reports_dir / "drift_report.html", "r") as f:
+                components.html(f.read(), height=1200, scrolling=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5. Controls
+# 5. System Health
 # ─────────────────────────────────────────────────────────────────────────────
-elif page.startswith("5"):
-    st.title("🛠️ Model Controls")
+elif page.startswith("💻"):
+    st.title("System Health & Controls")
     
-    st.markdown("Use these controls to manually trigger pipeline actions.")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("CPU Utilization", f"{psutil.cpu_percent(interval=1)}%")
+    mem = psutil.virtual_memory()
+    c2.metric("Memory Usage", f"{mem.percent}% ({mem.used / (1024**3):.1f} GB)")
+    disk = psutil.disk_usage('/')
+    c3.metric("Disk Storage", f"{disk.percent}% ({disk.free / (1024**3):.1f} GB Free)")
     
-    col1, col2 = st.columns(2)
+    st.divider()
     
-    with col1:
-        st.subheader("Run Drift Monitoring")
-        st.write("Generates new Evidently reports and Prometheus metrics based on the current data.")
-        if st.button("Trigger Monitoring Run", type="primary"):
-            with st.spinner("Running monitoring script..."):
+    st.markdown("### 🛠️ Pipeline Controls")
+    
+    colA, colB = st.columns(2)
+    with colA:
+        st.markdown("<div class='glass-metric'>", unsafe_allow_html=True)
+        st.subheader("Run Drift Monitor")
+        st.write("Generates new HTML reports and parses feature distributions.")
+        if st.button("Trigger Monitoring"):
+            with st.spinner("Running..."):
                 try:
-                    result = subprocess.run(
-                        ["python", "monitoring/run_monitoring.py"],
-                        capture_output=True, text=True, check=True
-                    )
-                    st.success("Monitoring completed successfully!")
-                    st.code(result.stdout)
-                except subprocess.CalledProcessError as e:
-                    st.error("Monitoring failed.")
-                    st.code(e.stderr)
+                    res = subprocess.run(["python", "monitoring/run_monitoring.py"], capture_output=True, text=True, check=True)
+                    st.success("Complete!")
+                except Exception as e:
+                    st.error("Failed")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    with col2:
-        st.subheader("Retrain Model Pipeline")
-        st.write("Triggers the full DVC pipeline to retrain and register a new model.")
-        if st.button("Trigger Full Pipeline", type="secondary"):
-            with st.spinner("Running DVC pipeline (this may take a while)..."):
+    with colB:
+        st.markdown("<div class='glass-metric-magenta'>", unsafe_allow_html=True)
+        st.subheader("Retrain Pipeline")
+        st.write("Trigger full `dvc repro` to build a new model version.")
+        if st.button("Trigger DVC Pipeline"):
+            with st.spinner("Running DVC Pipeline..."):
                 try:
-                    result = subprocess.run(
-                        ["dvc", "repro"],
-                        capture_output=True, text=True, check=True
-                    )
-                    st.success("Pipeline completed successfully!")
-                    st.code(result.stdout)
-                except subprocess.CalledProcessError as e:
-                    st.error("Pipeline failed.")
-                    st.code(e.stderr)
+                    res = subprocess.run(["dvc", "repro"], capture_output=True, text=True, check=True)
+                    st.success("Complete!")
+                except Exception as e:
+                    st.error("Failed")
+        st.markdown("</div>", unsafe_allow_html=True)
