@@ -23,7 +23,6 @@ The dataset was originally published by IBM as a sample dataset for Watson Analy
 
 - **Original publisher**: IBM Corporation
 - **Public URL**: https://www.kaggle.com/datasets/blastchar/telco-customer-churn
-- **Collection method**: Simulated / synthetic; not real customer PII
 - **Date of access**: 2026
 
 ---

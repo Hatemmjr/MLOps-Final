@@ -52,7 +52,7 @@ def main():
     # Save CSV
     os.makedirs("docs", exist_ok=True)
     runs_df.to_csv(OUTPUT_CSV, index=False)
-    print(f"\n✅ Saved {len(runs_df)} runs to {OUTPUT_CSV}")
+    print(f"\nSaved {len(runs_df)} runs to {OUTPUT_CSV}")
 
     # Print best run metrics for model_card.md
     metric_cols = [c for c in runs_df.columns if c.startswith("metrics.")]
@@ -74,7 +74,7 @@ def main():
     summary_cols = [c for c in summary_cols if c in runs_df.columns]
     print(runs_df[summary_cols].to_string(index=False))
 
-    print(f"\n✅ Done. Now update docs/model_card.md with the metrics above.")
+    print(f"\nDone. Now update docs/model_card.md with the metrics above.")
     print(f"   experiment_log.csv is at: {OUTPUT_CSV}")
 
 
