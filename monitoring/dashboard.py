@@ -173,7 +173,7 @@ pio.templates.default = "plotly_white"
 # Sidebar Navigation
 # ─────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("<h1>⚡ MLOps Center</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>Telco Churn Dashboard</h1>", unsafe_allow_html=True)
     st.markdown("<hr style='border-color:rgba(255,255,255,0.1);'/>", unsafe_allow_html=True)
 
     page = st.radio(
