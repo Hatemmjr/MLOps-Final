@@ -206,13 +206,11 @@ async def lifespan(app: FastAPI):
         log.info("Prometheus metrics available on port %d", prom_port)
     except Exception as e:
         log.warning("Could not start Prometheus server: %s", e)
-    yield
-    log.info("Shutting down model server.")
 
 
 app = FastAPI(
     title="Telco Churn Prediction API",
-    description="MLOps Final Project — DDSC611",
+    description="MLOps Final Project",
     version="1.0.0",
     lifespan=lifespan,
 )

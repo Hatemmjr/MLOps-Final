@@ -1,6 +1,6 @@
 # Model Card — Telco Customer Churn Classifier
 
-*Prepared for DDSC611 Final Project · Spring 2026 · ESLSCA University*
+*Prepared for MLOps Final Project*
 
 ---
 
@@ -11,10 +11,10 @@
 | **Model name** | `telco-churn-model` |
 | **Version** | Registered in MLflow; see Production tag |
 | **Type** | Binary Classification (Churn / No Churn) |
-| **Algorithm** | Best of: Gradient Boosting / Random Forest / Logistic Regression (selected by Optuna HPO) |
+| **Algorithm** | Best of: Logistic Regression / Random Forest / Gradient Boosting / XGBoost / LightGBM / Stacking Ensemble (selected by Optuna HPO) |
 | **Framework** | scikit-learn 1.4.2 |
 | **Training date** | See MLflow run metadata |
-| **Owner** | DDSC611 Team |
+| **Owner** | Yassin Bedier, Ahmed Hatem, Ahmed Khattab |
 
 ---
 
@@ -54,11 +54,11 @@ Full details in `docs/data_card.md`.
 
 | Metric | Score |
 |--------|-------|
-| ROC-AUC | **0.8412** (best: Gradient Boosting) |
-| Accuracy | **0.8021** |
-| F1 (positive class) | **0.6134** |
-| Precision | **0.6528** |
-| Recall | **0.5789** |
+| ROC-AUC | **0.8463** (best: XGBoost) |
+| Accuracy | **0.7892** |
+| F1 (positive class) | **0.6311** |
+| Precision | **0.5893** |
+| Recall | **0.6791** |
 
 *Exact per-run values are recorded in `docs/experiment_log.csv` and the MLflow UI (`http://localhost:5000`).*
 
@@ -104,7 +104,7 @@ Full details in `docs/data_card.md`.
 ## How to Cite
 
 ```
-DDSC611 Team (2026). Telco Customer Churn MLOps Pipeline.
+Yassin Bedier, Ahmed Hatem, Ahmed Khattab (2026). Telco Customer Churn MLOps Pipeline.
 ESLSCA University, Machine Learning Engineering Practices.
 GitHub: https://github.com/Hatemmjr/MLOps-Final
 ```

@@ -1,6 +1,6 @@
 # Data Card — IBM Telco Customer Churn Dataset
 
-*Prepared for DDSC611 Final Project · Spring 2026 · ESLSCA University*
+*Prepared for MLOps Final Project*
 
 ---
 
@@ -62,8 +62,9 @@ The dataset was originally published by IBM as a sample dataset for Watson Analy
 3. **Target encoding**: `Churn` is mapped from `{Yes, No}` to `{1, 0}` for binary classification.
 4. **Missing value imputation**: Numeric features → median; categorical features → most frequent value.
 5. **Scaling**: `StandardScaler` applied to all numeric features to centre and normalise.
-6. **Categorical encoding**: `OneHotEncoder(handle_unknown="ignore")` applied to all categorical features.
-7. **SMOTE**: Applied to the training set only to address the ~73/27 class imbalance.
+6. **Feature Selection**: 6 low-signal categorical features (`gender`, `PhoneService`, `MultipleLines`, `InternetService`, `StreamingTV`, `StreamingMovies`) are dropped dynamically based on Chi-Squared statistical testing to reduce noise.
+7. **Categorical encoding**: `OneHotEncoder(handle_unknown="ignore")` applied to all remaining categorical features.
+8. **SMOTE**: Applied to the training set only to address the ~73/27 class imbalance.
 
 ---
 

@@ -1,6 +1,6 @@
 # Telco Churn MLOps Pipeline
-### DDSC611 – Machine Learning Engineering Practices · Spring 2026
-**ESLSCA University** | Team Project | 40% of Final Grade
+### Machine Learning Engineering Practices · Spring 2026
+**ESLSCA University**
 
 [![CI Pipeline](https://github.com/Hatemmjr/MLOps-Final/actions/workflows/ci.yml/badge.svg)](https://github.com/Hatemmjr/MLOps-Final/actions)
 
@@ -124,14 +124,22 @@ open monitoring/evidently_reports/drift_report.html
 distribution shift. If >20% of features drift, a retrain alert is triggered and
 logged to `monitoring/drift.log`.
 
-### 8. Export Experiment Log
+### 8. Streamlit Dashboard
+
+```bash
+streamlit run monitoring/dashboard.py
+```
+
+The interactive dashboard provides live tracking of model performance, data drift monitoring, model comparison, system health, and a Live API Tester to query the FastAPI endpoint directly.
+
+### 9. Export Experiment Log
 
 ```bash
 python docs/experiment_log_generator.py
 # Output: docs/experiment_log.csv
 ```
 
-### 9. Docker 
+### 10. Docker 
 
 ```bash
 docker compose up --build
@@ -150,11 +158,13 @@ Raw Data (DVC)
      ▼
 prepare → preprocess → featurize → train
                                       │
-                          MLflow Registry (Production)
+                           MLflow Registry (Production)
                                       │
-                              FastAPI /predict
-                                      │
-                         Evidently Monitoring Reports
+                 ┌────────────────────┴────────────────────┐
+                 ▼                                         ▼
+           FastAPI /predict                       Streamlit Dashboard
+                 │
+    Evidently Monitoring Reports
 ```
 
 ## 📁 Repository Structure
@@ -171,6 +181,7 @@ prepare → preprocess → featurize → train
 │   ├── evaluation/evaluate.py   # Model validation gate
 │   └── serving/app.py           # FastAPI /health /predict /predict/batch
 ├── monitoring/run_monitoring.py # Evidently reports + Prometheus metrics
+├── monitoring/dashboard.py      # Streamlit UI (Drift, Performance, API Tester)
 ├── tests/                       # Unit + API + schema tests
 ├── docs/model_card.md           # Model Card
 ├── docs/data_card.md            # Data Card
@@ -194,6 +205,7 @@ prepare → preprocess → featurize → train
 | Validate model | `python -m src.evaluation.evaluate` |
 | Start API | `uvicorn src.serving.app:app --port 8000` |
 | Run monitoring | `python monitoring/run_monitoring.py` |
+| View dashboard | `streamlit run monitoring/dashboard.py` |
 | Run all tests | `pytest tests/ --cov=src` |
 | Export experiment log | `python docs/experiment_log_generator.py` |
 | Docker stack | `docker compose up --build` |
@@ -202,11 +214,11 @@ prepare → preprocess → featurize → train
 
 ## Team
 
-| Name | Student ID |
-|------|-----------|
-| TBD | TBD |
-| TBD | TBD |
-| TBD | TBD |
+| Name |
+|------|
+| Yassin Bedier |
+| Ahmed Hatem |
+| Ahmed Khattab |
 
 ---
 
@@ -218,11 +230,6 @@ License: IBM Community Data License Agreement (educational use)
 
 ---
 
-## Demo Video & Report
+## Demo Video
 
-- **Demo Video:** [Link TBD]
-- **Technical Report:** [Link TBD]
-
----
-
-© 2026 ESLSCA University · DDSC611 · Mohamed Tharwat, PhD, SM IEEE
+- **Demo Video:** [https://drive.google.com/file/d/1u0M8d0Xk3u6h2w-o4fH5xJp6yY4X7sHn/view?usp=sharing]
