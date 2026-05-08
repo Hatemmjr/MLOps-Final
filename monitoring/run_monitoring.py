@@ -224,6 +224,12 @@ def main() -> None:
     log.info("Loading reference and production datasets …")
     reference = pd.read_csv(dp["reference_path"])
     production = pd.read_csv(dp["production_path"])
+
+    if "customerID" in reference.columns:
+        reference = reference.drop(columns=["customerID"])
+    if "customerID" in production.columns:
+        production = production.drop(columns=["customerID"])
+
     log.info("Reference: %d rows | Production: %d rows", len(reference), len(production))
 
     # ── Report 1: Baseline (reference vs. clean held-out) ──────────────────
