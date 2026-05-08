@@ -66,7 +66,7 @@ INFERENCE_COUNTER = Counter(
 # ─────────────────────────────────────────────────────────────────────────────
 _model_state: dict[str, Any] = {
     "model": None,
-    "preprocessor": None,   # sklearn ColumnTransformer (fitted)
+    "preprocessor": None,  # sklearn ColumnTransformer (fitted)
     "model_name": None,
     "model_version": None,
     "status": "not_loaded",
@@ -87,8 +87,7 @@ def _load_preprocessor() -> None:
         log.info("Preprocessing pipeline loaded from %s", pipeline_path)
     else:
         log.warning(
-            "Preprocessing pipeline not found at %s — "
-            "raw features will be passed directly.",
+            "Preprocessing pipeline not found at %s — " "raw features will be passed directly.",
             pipeline_path,
         )
 
@@ -206,7 +205,7 @@ async def lifespan(app: FastAPI):
         log.info("Prometheus metrics available on port %d", prom_port)
     except Exception as e:
         log.warning("Could not start Prometheus server: %s", e)
-    
+
     yield
     log.info("Shutting down model server.")
 
@@ -246,6 +245,7 @@ def _predict_single(record: ChurnRecord) -> PredictionResponse:
                 columns=preprocessor.get_feature_names_out(),
             )
             from src.data.feature_selection import drop_low_signal_single
+
             df = drop_low_signal_single(df)
         except Exception as e:
             log.error("Preprocessing failed: %s", e)
@@ -277,6 +277,7 @@ def predict_batch(batch: BatchRequest):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "src.serving.app:app",
         host=SERVING_CFG["host"],
