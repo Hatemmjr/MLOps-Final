@@ -28,7 +28,7 @@ st.set_page_config(
     page_title="Telco Churn Analytics",
     page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -38,11 +38,11 @@ CUSTOM_CSS = """
 <style>
     /* Global Background and Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-    
+
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif !important;
     }
-    
+
     .stApp {
         background: radial-gradient(circle at 15% 50%, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
         color: #e0e0e0;
@@ -58,7 +58,7 @@ CUSTOM_CSS = """
         backdrop-filter: blur(12px) !important;
         border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
-    
+
     /* Custom Neon Metric Cards */
     .glass-metric {
         background: rgba(22, 33, 62, 0.6);
@@ -107,7 +107,7 @@ CUSTOM_CSS = """
         color: #64748b;
         margin-top: 5px;
     }
-    
+
     /* Headers */
     h1, h2, h3 {
         color: #ffffff !important;
@@ -120,7 +120,7 @@ CUSTOM_CSS = """
         -webkit-text-fill-color: transparent;
         margin-bottom: 30px !important;
     }
-    
+
     /* Tabs styling */
     [data-baseweb="tab-list"] {
         gap: 20px;
@@ -149,7 +149,7 @@ def render_metric(title: str, value: str, subtitle: str = "", color: str = "cyan
     """Render a premium glassmorphic metric card."""
     color_class = "glass-metric-magenta" if color == "magenta" else ""
     val_class = "metric-value-magenta" if color == "magenta" else ""
-    
+
     html = f"""
     <div class="glass-metric {color_class}">
         <div class="metric-title">{title}</div>
@@ -168,6 +168,7 @@ def load_params(path: str = "configs/params.yaml") -> dict:
     with open(path) as f:
         return yaml.safe_load(f)
 
+
 PARAMS = load_params()
 MLFLOW_URI = PARAMS["mlflow"]["tracking_uri"]
 mlflow.set_tracking_uri(MLFLOW_URI)
@@ -183,7 +184,7 @@ pio.templates.default = "plotly_dark"
 with st.sidebar:
     st.markdown("<h1>⚡ MLOps Center</h1>", unsafe_allow_html=True)
     st.markdown("<hr style='border-color:rgba(255,255,255,0.1);'/>", unsafe_allow_html=True)
-    
+
     page = st.radio(
         "Navigation",
         [
@@ -194,7 +195,7 @@ with st.sidebar:
             "📉 Data Drift",
             "💻 System Health",
         ],
-        label_visibility="collapsed"
+        label_visibility="collapsed",
     )
 
 
@@ -206,7 +207,7 @@ def fetch_prometheus():
     if host == "0.0.0.0":
         host = "localhost"
     port = PARAMS["monitoring"]["prometheus_port"]
-    
+
     metrics_dict = {}
     try:
         r = requests.get(f"http://{host}:{port}/", timeout=2)
@@ -223,37 +224,46 @@ def fetch_prometheus():
 # ─────────────────────────────────────────────────────────────────────────────
 if page.startswith("🚀"):
     st.title("Executive Overview")
-    
+
     metrics = fetch_prometheus()
-    
+
     # ── KPI Cards ──
     col1, col2, col3, col4 = st.columns(4)
-    
+
     # Production Model
     exp = client.get_experiment_by_name(PARAMS["training"]["experiment_name"])
     best_auc = 0.0
     if exp:
         runs = client.search_runs(exp.experiment_id)
         if runs:
-            best_auc = max(runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0)).data.metrics.get("roc_auc", 0.0)
-            
+            best_auc = max(runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0)).data.metrics.get(
+                "roc_auc", 0.0
+            )
+
     with col1:
         render_metric("Prod Model AUC", f"{best_auc:.4f}", "Latest version in Registry")
-        
+
     # Inference Count
     churn_cnt, nochurn_cnt = 0, 0
     if "inference_count" in metrics:
         count_metrics = metrics["inference_count"].samples
         churn_cnt = sum([s.value for s in count_metrics if s.labels.get("predicted_class") == "1"])
-        nochurn_cnt = sum([s.value for s in count_metrics if s.labels.get("predicted_class") == "0"])
-    
+        nochurn_cnt = sum(
+            [s.value for s in count_metrics if s.labels.get("predicted_class") == "0"]
+        )
+
     with col2:
-        render_metric("Total Inferences", f"{int(churn_cnt + nochurn_cnt):,}", "Real-time API Requests", color="magenta")
-        
+        render_metric(
+            "Total Inferences",
+            f"{int(churn_cnt + nochurn_cnt):,}",
+            "Real-time API Requests",
+            color="magenta",
+        )
+
     # CPU Usage
     with col3:
         render_metric("System CPU", f"{psutil.cpu_percent()}%", "Host Server Utilization")
-        
+
     # Drift
     drift_status = "0.0%"
     log_path = pathlib.Path(PARAMS["monitoring"]["log_path"])
@@ -263,10 +273,12 @@ if page.startswith("🚀"):
             if logs:
                 drift_status = f"{logs[-1]['drift_fraction']*100:.1f}%"
     with col4:
-        render_metric("Current Drift", drift_status, "Features exceeding threshold", color="magenta")
+        render_metric(
+            "Current Drift", drift_status, "Features exceeding threshold", color="magenta"
+        )
 
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     # ── ROI Simulator ──
     st.markdown("### 💰 Projected Revenue Impact")
     prod_path = pathlib.Path(PARAMS["data"]["production_path"])
@@ -275,35 +287,41 @@ if page.startswith("🚀"):
         if "TotalCharges" in df_prod.columns:
             actual_churners = df_prod[df_prod[PARAMS["data"]["target_column"]] == 1]
             total_risk = actual_churners["TotalCharges"].sum()
-            
+
             c1, c2 = st.columns([1, 2])
             with c1:
                 st.markdown(f"**Total Revenue at Risk**: `${total_risk:,.0f}`")
                 success_rate = st.slider("Campaign Success Rate (%)", 5, 80, 25) / 100.0
                 cost = st.slider("Cost per Contact ($)", 10, 200, 50)
-                
+
                 recall, precision = 0.70, 0.60
                 if runs:
                     best = max(runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0))
                     recall = best.data.metrics.get("recall", 0.70)
                     precision = best.data.metrics.get("precision", 0.60)
-                    
+
                 tp = int(len(actual_churners) * recall)
                 predicted = int(tp / precision)
                 revenue_saved = tp * actual_churners["TotalCharges"].mean() * success_rate
                 net_roi = revenue_saved - (predicted * cost)
-                
-                render_metric("Net ROI", f"${net_roi:,.0f}", f"Assuming {success_rate*100}% retention")
-                
+
+                render_metric(
+                    "Net ROI", f"${net_roi:,.0f}", f"Assuming {success_rate*100}% retention"
+                )
+
             with c2:
                 # Plot ROI sensitivity
                 rates = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
-                rois = [(tp * actual_churners["TotalCharges"].mean() * r) - (predicted * cost) for r in rates]
+                rois = [
+                    (tp * actual_churners["TotalCharges"].mean() * r) - (predicted * cost)
+                    for r in rates
+                ]
                 fig = px.area(
-                    x=[r*100 for r in rates], y=rois, 
+                    x=[r * 100 for r in rates],
+                    y=rois,
                     title="ROI Sensitivity by Success Rate",
                     labels={"x": "Campaign Success Rate (%)", "y": "Net ROI ($)"},
-                    color_discrete_sequence=["#00f2fe"]
+                    color_discrete_sequence=["#00f2fe"],
                 )
                 fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
                 st.plotly_chart(fig, use_container_width=True)
@@ -314,72 +332,110 @@ if page.startswith("🚀"):
 elif page.startswith("📊"):
     st.title("Analytics & Insights")
     st.markdown("Advanced analytics on production and predicted data.")
-    
+
     prod_path = pathlib.Path(PARAMS["data"]["production_path"])
     if prod_path.exists():
         df_prod = pd.read_csv(prod_path)
-        
+
         c1, c2 = st.columns(2)
-        
+
         with c1:
             if "Contract" in df_prod.columns:
                 fig = px.sunburst(
-                    df_prod, path=["Contract", PARAMS["data"]["target_column"]], 
+                    df_prod,
+                    path=["Contract", PARAMS["data"]["target_column"]],
                     title="Churn Breakdown by Contract Type",
                     color=PARAMS["data"]["target_column"],
-                    color_continuous_scale=["#00f2fe", "#f093fb"]
+                    color_continuous_scale=["#00f2fe", "#f093fb"],
                 )
                 fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
                 st.plotly_chart(fig, use_container_width=True)
-                
+
         with c2:
             if "PaymentMethod" in df_prod.columns:
                 fig2 = px.histogram(
-                    df_prod, x="PaymentMethod", color=PARAMS["data"]["target_column"],
-                    barmode="group", title="Churn by Payment Method",
-                    color_discrete_sequence=["#00f2fe", "#f093fb"]
+                    df_prod,
+                    x="PaymentMethod",
+                    color=PARAMS["data"]["target_column"],
+                    barmode="group",
+                    title="Churn by Payment Method",
+                    color_discrete_sequence=["#00f2fe", "#f093fb"],
                 )
-                fig2.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", xaxis_tickangle=-45)
+                fig2.update_layout(
+                    plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", xaxis_tickangle=-45
+                )
                 st.plotly_chart(fig2, use_container_width=True)
-                
+
         st.markdown("### Feature Relationships")
         c3, c4 = st.columns(2)
         with c3:
             if "MonthlyCharges" in df_prod.columns:
-                fig_box = px.box(df_prod, x=PARAMS["data"]["target_column"], y="MonthlyCharges", color=PARAMS["data"]["target_column"], title="Monthly Charges Distribution", color_discrete_sequence=["#00f2fe", "#f093fb"])
+                fig_box = px.box(
+                    df_prod,
+                    x=PARAMS["data"]["target_column"],
+                    y="MonthlyCharges",
+                    color=PARAMS["data"]["target_column"],
+                    title="Monthly Charges Distribution",
+                    color_discrete_sequence=["#00f2fe", "#f093fb"],
+                )
                 fig_box.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
                 st.plotly_chart(fig_box, use_container_width=True)
         with c4:
             cols = ["tenure", "MonthlyCharges", "TotalCharges"]
             if all(c in df_prod.columns for c in cols):
                 corr = df_prod[cols].corr()
-                fig_corr = px.imshow(corr, text_auto=True, title="Numeric Correlation", color_continuous_scale="Purpor")
+                fig_corr = px.imshow(
+                    corr,
+                    text_auto=True,
+                    title="Numeric Correlation",
+                    color_continuous_scale="Purpor",
+                )
                 fig_corr.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
                 st.plotly_chart(fig_corr, use_container_width=True)
-                
+
         st.markdown("### Production Feature Distribution (Live via Prometheus)")
         metrics = fetch_prometheus()
         mc_col, tenure_col = st.columns(2)
-        
+
         with mc_col:
             if "feature_monthly_charges" in metrics:
                 hist = metrics["feature_monthly_charges"].samples
-                buckets = {float(s.labels["le"]): s.value for s in hist if s.labels.get("le") != "+Inf"}
+                buckets = {
+                    float(s.labels["le"]): s.value for s in hist if s.labels.get("le") != "+Inf"
+                }
                 if buckets:
                     le_keys = sorted(buckets.keys())
-                    counts = [buckets[k] - (buckets[le_keys[i-1]] if i>0 else 0) for i, k in enumerate(le_keys)]
-                    fig3 = px.bar(x=[str(k) for k in le_keys], y=counts, title="MonthlyCharges (Live Requests)", color_discrete_sequence=["#f093fb"])
+                    counts = [
+                        buckets[k] - (buckets[le_keys[i - 1]] if i > 0 else 0)
+                        for i, k in enumerate(le_keys)
+                    ]
+                    fig3 = px.bar(
+                        x=[str(k) for k in le_keys],
+                        y=counts,
+                        title="MonthlyCharges (Live Requests)",
+                        color_discrete_sequence=["#f093fb"],
+                    )
                     fig3.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
                     st.plotly_chart(fig3, use_container_width=True)
 
         with tenure_col:
             if "feature_tenure" in metrics:
                 hist = metrics["feature_tenure"].samples
-                buckets = {float(s.labels["le"]): s.value for s in hist if s.labels.get("le") != "+Inf"}
+                buckets = {
+                    float(s.labels["le"]): s.value for s in hist if s.labels.get("le") != "+Inf"
+                }
                 if buckets:
                     le_keys = sorted(buckets.keys())
-                    counts = [buckets[k] - (buckets[le_keys[i-1]] if i>0 else 0) for i, k in enumerate(le_keys)]
-                    fig4 = px.bar(x=[str(k) for k in le_keys], y=counts, title="Tenure (Live Requests)", color_discrete_sequence=["#00f2fe"])
+                    counts = [
+                        buckets[k] - (buckets[le_keys[i - 1]] if i > 0 else 0)
+                        for i, k in enumerate(le_keys)
+                    ]
+                    fig4 = px.bar(
+                        x=[str(k) for k in le_keys],
+                        y=counts,
+                        title="Tenure (Live Requests)",
+                        color_discrete_sequence=["#00f2fe"],
+                    )
                     fig4.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
                     st.plotly_chart(fig4, use_container_width=True)
 
@@ -388,7 +444,7 @@ elif page.startswith("📊"):
 # ─────────────────────────────────────────────────────────────────────────────
 elif page.startswith("🔬"):
     st.title("Model Comparison")
-    
+
     exp = client.get_experiment_by_name(PARAMS["training"]["experiment_name"])
     if exp:
         runs = client.search_runs(exp.experiment_id)
@@ -396,41 +452,55 @@ elif page.startswith("🔬"):
             data = []
             for r in runs:
                 name = r.data.tags.get("mlflow.runName", "unnamed").split("-")[0].title()
-                data.append({
-                    "Model": name,
-                    "AUC": r.data.metrics.get("roc_auc", 0.0),
-                    "F1": r.data.metrics.get("f1", 0.0),
-                    "Recall": r.data.metrics.get("recall", 0.0),
-                    "Precision": r.data.metrics.get("precision", 0.0)
-                })
-            
+                data.append(
+                    {
+                        "Model": name,
+                        "AUC": r.data.metrics.get("roc_auc", 0.0),
+                        "F1": r.data.metrics.get("f1", 0.0),
+                        "Recall": r.data.metrics.get("recall", 0.0),
+                        "Precision": r.data.metrics.get("precision", 0.0),
+                    }
+                )
+
             df_runs = pd.DataFrame(data)
-            best_models = df_runs.loc[df_runs.groupby("Model")["AUC"].idxmax()].reset_index(drop=True)
-            
+            best_models = df_runs.loc[df_runs.groupby("Model")["AUC"].idxmax()].reset_index(
+                drop=True
+            )
+
             c1, c2 = st.columns(2)
             with c1:
                 df_melt = best_models.melt(id_vars="Model", var_name="Metric", value_name="Score")
-                fig_bar = px.bar(df_melt, x="Model", y="Score", color="Metric", barmode="group", title="Best Models by Metric", color_discrete_sequence=["#00f2fe", "#f093fb", "#a200ff", "#00ff88"])
+                fig_bar = px.bar(
+                    df_melt,
+                    x="Model",
+                    y="Score",
+                    color="Metric",
+                    barmode="group",
+                    title="Best Models by Metric",
+                    color_discrete_sequence=["#00f2fe", "#f093fb", "#a200ff", "#00ff88"],
+                )
                 fig_bar.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
                 st.plotly_chart(fig_bar, use_container_width=True)
-                
+
             with c2:
-                categories = ['AUC', 'F1', 'Recall', 'Precision']
+                categories = ["AUC", "F1", "Recall", "Precision"]
                 fig_radar = go.Figure()
                 colors = ["#00f2fe", "#f093fb", "#a200ff", "#00ff88", "#ffff00", "#ff00ff"]
                 for i, row in best_models.iterrows():
-                    fig_radar.add_trace(go.Scatterpolar(
-                        r=[row['AUC'], row['F1'], row['Recall'], row['Precision']],
-                        theta=categories,
-                        fill='toself',
-                        name=row['Model'],
-                        line_color=colors[i % len(colors)]
-                    ))
+                    fig_radar.add_trace(
+                        go.Scatterpolar(
+                            r=[row["AUC"], row["F1"], row["Recall"], row["Precision"]],
+                            theta=categories,
+                            fill="toself",
+                            name=row["Model"],
+                            line_color=colors[i % len(colors)],
+                        )
+                    )
                 fig_radar.update_layout(
                     polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
                     showlegend=True,
                     title="Radar Chart Comparison",
-                    paper_bgcolor="rgba(0,0,0,0)"
+                    paper_bgcolor="rgba(0,0,0,0)",
                 )
                 st.plotly_chart(fig_radar, use_container_width=True)
         else:
@@ -441,45 +511,78 @@ elif page.startswith("🔬"):
 # ─────────────────────────────────────────────────────────────────────────────
 elif page.startswith("📈"):
     st.title("Model Performance")
-    
+
     exp = client.get_experiment_by_name(PARAMS["training"]["experiment_name"])
     if exp:
         runs = client.search_runs(exp.experiment_id)
         if runs:
             # Table of runs
-            data = [{
-                "Name": r.data.tags.get("mlflow.runName", "unnamed"),
-                "AUC": r.data.metrics.get("roc_auc", 0.0),
-                "F1": r.data.metrics.get("f1", 0.0),
-                "Recall": r.data.metrics.get("recall", 0.0),
-                "Precision": r.data.metrics.get("precision", 0.0),
-                "Time": pd.to_datetime(r.info.start_time, unit="ms")
-            } for r in runs]
+            data = [
+                {
+                    "Name": r.data.tags.get("mlflow.runName", "unnamed"),
+                    "AUC": r.data.metrics.get("roc_auc", 0.0),
+                    "F1": r.data.metrics.get("f1", 0.0),
+                    "Recall": r.data.metrics.get("recall", 0.0),
+                    "Precision": r.data.metrics.get("precision", 0.0),
+                    "Time": pd.to_datetime(r.info.start_time, unit="ms"),
+                }
+                for r in runs
+            ]
             df_runs = pd.DataFrame(data).sort_values("Time")
-            
+
             c1, c2 = st.columns([2, 1])
             with c1:
                 fig = go.Figure()
-                fig.add_trace(go.Scatter(x=df_runs["Time"], y=df_runs["AUC"], mode='lines+markers', name='ROC AUC', line=dict(color='#00f2fe', width=3)))
-                fig.add_trace(go.Scatter(x=df_runs["Time"], y=df_runs["F1"], mode='lines+markers', name='F1 Score', line=dict(color='#f093fb', width=3)))
-                fig.update_layout(title="Metric Evolution Over Optuna Trials", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_runs["Time"],
+                        y=df_runs["AUC"],
+                        mode="lines+markers",
+                        name="ROC AUC",
+                        line=dict(color="#00f2fe", width=3),
+                    )
+                )
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_runs["Time"],
+                        y=df_runs["F1"],
+                        mode="lines+markers",
+                        name="F1 Score",
+                        line=dict(color="#f093fb", width=3),
+                    )
+                )
+                fig.update_layout(
+                    title="Metric Evolution Over Optuna Trials",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                )
                 st.plotly_chart(fig, use_container_width=True)
-                
+
             with c2:
                 best = df_runs.loc[df_runs["AUC"].idxmax()]
                 render_metric("Best AUC", f"{best['AUC']:.4f}", f"Run: {best['Name']}")
-                render_metric("Best F1", f"{best['F1']:.4f}", "Post-threshold tuning", color="magenta")
+                render_metric(
+                    "Best F1", f"{best['F1']:.4f}", "Post-threshold tuning", color="magenta"
+                )
                 render_metric("Best Recall", f"{best['Recall']:.4f}", "Catching churners")
 
                 st.markdown("### Simulated Confusion Matrix")
-                p = best['Precision']
-                r = best['Recall']
+                p = best["Precision"]
+                r = best["Recall"]
                 TP = 250 * r
                 FN = 250 - TP
                 FP = TP / p - TP if p > 0 else 0
                 TN = 750 - FP
                 z = [[TN, FP], [FN, TP]]
-                fig_cm = px.imshow(z, text_auto=True, labels=dict(x="Predicted", y="Actual"), x=["No Churn", "Churn"], y=["No Churn", "Churn"], color_continuous_scale="Blues", title="Estimated Matrix (1000 samples)")
+                fig_cm = px.imshow(
+                    z,
+                    text_auto=True,
+                    labels=dict(x="Predicted", y="Actual"),
+                    x=["No Churn", "Churn"],
+                    y=["No Churn", "Churn"],
+                    color_continuous_scale="Blues",
+                    title="Estimated Matrix (1000 samples)",
+                )
                 fig_cm.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
                 st.plotly_chart(fig_cm, use_container_width=True)
 
@@ -490,39 +593,50 @@ elif page.startswith("📈"):
                 best_run_obj = max(runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0))
                 model_uri = f"runs:/{best_run_obj.info.run_id}/model"
                 loaded_model = mlflow.sklearn.load_model(model_uri)
-                
+
                 if hasattr(loaded_model, "feature_importances_"):
                     importances = loaded_model.feature_importances_
-                    # Needs feature names. Let's try to get them from the data schema or just plot top 20
+                    # Needs feature names. Try to get them or just plot top 20
                     # Since preprocessor removes names, we might just have indices, but let's try
                     if hasattr(loaded_model, "feature_names_in_"):
                         feats = loaded_model.feature_names_in_
                     else:
                         feats = [f"Feature {i}" for i in range(len(importances))]
-                        
+
                     df_imp = pd.DataFrame({"Feature": feats, "Importance": importances})
                     df_imp = df_imp.sort_values("Importance", ascending=False).head(15)
-                    
-                    fig_imp = px.bar(df_imp, x="Importance", y="Feature", orientation='h', title="Top 15 Important Features", color_discrete_sequence=["#00f2fe"])
-                    fig_imp.update_layout(yaxis={'categoryorder':'total ascending'}, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+
+                    fig_imp = px.bar(
+                        df_imp,
+                        x="Importance",
+                        y="Feature",
+                        orientation="h",
+                        title="Top 15 Important Features",
+                        color_discrete_sequence=["#00f2fe"],
+                    )
+                    fig_imp.update_layout(
+                        yaxis={"categoryorder": "total ascending"},
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        paper_bgcolor="rgba(0,0,0,0)",
+                    )
                     st.plotly_chart(fig_imp, use_container_width=True)
                 else:
                     st.info("Best model doesn't expose `feature_importances_`.")
             except Exception as e:
                 st.info(f"Could not load feature importances: {e}")
-                
+
         else:
             st.warning("No runs found in MLflow.")
-            
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. Data Drift
 # ─────────────────────────────────────────────────────────────────────────────
 elif page.startswith("📉"):
     st.title("Data Degradation & Drift")
-    
+
     log_path = pathlib.Path(PARAMS["monitoring"]["log_path"])
     reports_dir = pathlib.Path(PARAMS["monitoring"]["reports_dir"])
-    
+
     if log_path.exists():
         with open(log_path, "r") as f:
             logs = [json.loads(line) for line in f if line.strip()]
@@ -530,17 +644,25 @@ elif page.startswith("📉"):
                 df_logs = pd.DataFrame(logs)
                 df_logs["timestamp"] = pd.to_datetime(df_logs["timestamp"])
                 fig = px.area(
-                    df_logs, x="timestamp", y="drift_fraction", color="report",
+                    df_logs,
+                    x="timestamp",
+                    y="drift_fraction",
+                    color="report",
                     title="Historical Drift Fraction",
-                    color_discrete_sequence=["#00f2fe", "#f093fb"]
+                    color_discrete_sequence=["#00f2fe", "#f093fb"],
                 )
-                fig.add_hline(y=PARAMS["monitoring"]["drift_threshold"], line_dash="dash", line_color="#ff4b4b", annotation_text="Alert Threshold")
+                fig.add_hline(
+                    y=PARAMS["monitoring"]["drift_threshold"],
+                    line_dash="dash",
+                    line_color="#ff4b4b",
+                    annotation_text="Alert Threshold",
+                )
                 fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
                 st.plotly_chart(fig, use_container_width=True)
-                
+
     st.markdown("### Interactive Evidently Reports")
     tab1, tab2 = st.tabs(["Baseline (Holdout)", "Drift (Production)"])
-    
+
     with tab1:
         if (reports_dir / "baseline_report.html").exists():
             with open(reports_dir / "baseline_report.html", "r") as f:
@@ -556,18 +678,18 @@ elif page.startswith("📉"):
 # ─────────────────────────────────────────────────────────────────────────────
 elif page.startswith("💻"):
     st.title("System Health & Controls")
-    
+
     c1, c2, c3 = st.columns(3)
     c1.metric("CPU Utilization", f"{psutil.cpu_percent(interval=1)}%")
     mem = psutil.virtual_memory()
     c2.metric("Memory Usage", f"{mem.percent}% ({mem.used / (1024**3):.1f} GB)")
-    disk = psutil.disk_usage('/')
+    disk = psutil.disk_usage("/")
     c3.metric("Disk Storage", f"{disk.percent}% ({disk.free / (1024**3):.1f} GB Free)")
-    
+
     st.divider()
-    
+
     st.markdown("### 🛠️ Pipeline Controls")
-    
+
     colA, colB = st.columns(2)
     with colA:
         st.markdown("<div class='glass-metric'>", unsafe_allow_html=True)
@@ -576,7 +698,12 @@ elif page.startswith("💻"):
         if st.button("Trigger Monitoring"):
             with st.spinner("Running..."):
                 try:
-                    res = subprocess.run(["python", "monitoring/run_monitoring.py"], capture_output=True, text=True, check=True)
+                    res = subprocess.run(
+                        ["python", "monitoring/run_monitoring.py"],
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
                     st.success("Complete!")
                 except Exception:
                     st.error("Failed")
@@ -589,7 +716,9 @@ elif page.startswith("💻"):
         if st.button("Trigger DVC Pipeline"):
             with st.spinner("Running DVC Pipeline..."):
                 try:
-                    res = subprocess.run(["dvc", "repro"], capture_output=True, text=True, check=True)
+                    res = subprocess.run(
+                        ["dvc", "repro"], capture_output=True, text=True, check=True
+                    )
                     st.success("Complete!")
                 except Exception:
                     st.error("Failed")
