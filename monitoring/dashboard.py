@@ -4,17 +4,16 @@ Unifies MLflow, Evidently, Prometheus metrics, and Business KPIs
 with a Glassmorphism Neon UI and advanced Plotly analytics.
 """
 
-import datetime
 import json
 import pathlib
 import subprocess
 import yaml
 
-import joblib
 import mlflow
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.io as pio
 import psutil
 import requests
 import streamlit as st
@@ -175,7 +174,6 @@ mlflow.set_tracking_uri(MLFLOW_URI)
 client = MlflowClient()
 
 # Set default plotly dark template
-import plotly.io as pio
 pio.templates.default = "plotly_dark"
 
 
@@ -187,14 +185,16 @@ with st.sidebar:
     st.markdown("<hr style='border-color:rgba(255,255,255,0.1);'/>", unsafe_allow_html=True)
     
     page = st.radio(
-        "",
+        "Navigation",
         [
             "🚀 Executive Overview",
             "📊 Analytics & Insights",
+            "🔬 Model Comparison",
             "📈 Model Performance",
             "📉 Data Drift",
             "💻 System Health",
         ],
+        label_visibility="collapsed"
     )
 
 
@@ -203,7 +203,8 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 def fetch_prometheus():
     host = PARAMS["serving"]["host"]
-    if host == "0.0.0.0": host = "localhost"
+    if host == "0.0.0.0":
+        host = "localhost"
     port = PARAMS["monitoring"]["prometheus_port"]
     
     metrics_dict = {}
@@ -341,6 +342,21 @@ elif page.startswith("📊"):
                 fig2.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", xaxis_tickangle=-45)
                 st.plotly_chart(fig2, use_container_width=True)
                 
+        st.markdown("### Feature Relationships")
+        c3, c4 = st.columns(2)
+        with c3:
+            if "MonthlyCharges" in df_prod.columns:
+                fig_box = px.box(df_prod, x=PARAMS["data"]["target_column"], y="MonthlyCharges", color=PARAMS["data"]["target_column"], title="Monthly Charges Distribution", color_discrete_sequence=["#00f2fe", "#f093fb"])
+                fig_box.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig_box, use_container_width=True)
+        with c4:
+            cols = ["tenure", "MonthlyCharges", "TotalCharges"]
+            if all(c in df_prod.columns for c in cols):
+                corr = df_prod[cols].corr()
+                fig_corr = px.imshow(corr, text_auto=True, title="Numeric Correlation", color_continuous_scale="Purpor")
+                fig_corr.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig_corr, use_container_width=True)
+                
         st.markdown("### Production Feature Distribution (Live via Prometheus)")
         metrics = fetch_prometheus()
         mc_col, tenure_col = st.columns(2)
@@ -366,6 +382,59 @@ elif page.startswith("📊"):
                     fig4 = px.bar(x=[str(k) for k in le_keys], y=counts, title="Tenure (Live Requests)", color_discrete_sequence=["#00f2fe"])
                     fig4.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
                     st.plotly_chart(fig4, use_container_width=True)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2.5 Model Comparison
+# ─────────────────────────────────────────────────────────────────────────────
+elif page.startswith("🔬"):
+    st.title("Model Comparison")
+    
+    exp = client.get_experiment_by_name(PARAMS["training"]["experiment_name"])
+    if exp:
+        runs = client.search_runs(exp.experiment_id)
+        if runs:
+            data = []
+            for r in runs:
+                name = r.data.tags.get("mlflow.runName", "unnamed").split("-")[0].title()
+                data.append({
+                    "Model": name,
+                    "AUC": r.data.metrics.get("roc_auc", 0.0),
+                    "F1": r.data.metrics.get("f1", 0.0),
+                    "Recall": r.data.metrics.get("recall", 0.0),
+                    "Precision": r.data.metrics.get("precision", 0.0)
+                })
+            
+            df_runs = pd.DataFrame(data)
+            best_models = df_runs.loc[df_runs.groupby("Model")["AUC"].idxmax()].reset_index(drop=True)
+            
+            c1, c2 = st.columns(2)
+            with c1:
+                df_melt = best_models.melt(id_vars="Model", var_name="Metric", value_name="Score")
+                fig_bar = px.bar(df_melt, x="Model", y="Score", color="Metric", barmode="group", title="Best Models by Metric", color_discrete_sequence=["#00f2fe", "#f093fb", "#a200ff", "#00ff88"])
+                fig_bar.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig_bar, use_container_width=True)
+                
+            with c2:
+                categories = ['AUC', 'F1', 'Recall', 'Precision']
+                fig_radar = go.Figure()
+                colors = ["#00f2fe", "#f093fb", "#a200ff", "#00ff88", "#ffff00", "#ff00ff"]
+                for i, row in best_models.iterrows():
+                    fig_radar.add_trace(go.Scatterpolar(
+                        r=[row['AUC'], row['F1'], row['Recall'], row['Precision']],
+                        theta=categories,
+                        fill='toself',
+                        name=row['Model'],
+                        line_color=colors[i % len(colors)]
+                    ))
+                fig_radar.update_layout(
+                    polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                    showlegend=True,
+                    title="Radar Chart Comparison",
+                    paper_bgcolor="rgba(0,0,0,0)"
+                )
+                st.plotly_chart(fig_radar, use_container_width=True)
+        else:
+            st.warning("No runs found in MLflow.")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. Model Performance
@@ -401,6 +470,18 @@ elif page.startswith("📈"):
                 render_metric("Best AUC", f"{best['AUC']:.4f}", f"Run: {best['Name']}")
                 render_metric("Best F1", f"{best['F1']:.4f}", "Post-threshold tuning", color="magenta")
                 render_metric("Best Recall", f"{best['Recall']:.4f}", "Catching churners")
+
+                st.markdown("### Simulated Confusion Matrix")
+                p = best['Precision']
+                r = best['Recall']
+                TP = 250 * r
+                FN = 250 - TP
+                FP = TP / p - TP if p > 0 else 0
+                TN = 750 - FP
+                z = [[TN, FP], [FN, TP]]
+                fig_cm = px.imshow(z, text_auto=True, labels=dict(x="Predicted", y="Actual"), x=["No Churn", "Churn"], y=["No Churn", "Churn"], color_continuous_scale="Blues", title="Estimated Matrix (1000 samples)")
+                fig_cm.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig_cm, use_container_width=True)
 
             # Try to plot feature importances if XGB/LGBM is loaded locally
             st.markdown("### Global Feature Importance")
@@ -497,7 +578,7 @@ elif page.startswith("💻"):
                 try:
                     res = subprocess.run(["python", "monitoring/run_monitoring.py"], capture_output=True, text=True, check=True)
                     st.success("Complete!")
-                except Exception as e:
+                except Exception:
                     st.error("Failed")
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -510,6 +591,6 @@ elif page.startswith("💻"):
                 try:
                     res = subprocess.run(["dvc", "repro"], capture_output=True, text=True, check=True)
                     st.success("Complete!")
-                except Exception as e:
+                except Exception:
                     st.error("Failed")
         st.markdown("</div>", unsafe_allow_html=True)
