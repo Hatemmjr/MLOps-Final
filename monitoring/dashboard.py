@@ -735,3 +735,176 @@ elif page.startswith("💻"):
                 except Exception:
                     st.error("Failed")
         st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. Live API Tester
+# ─────────────────────────────────────────────────────────────────────────────
+elif page.startswith("🧪"):
+    st.title("🧪 Live API Tester")
+    st.markdown(
+        "Fill in the customer details below and click **Run Prediction** to get a "
+        "live churn verdict from the production `/predict` endpoint."
+    )
+
+    _host = PARAMS["serving"]["host"]
+    if _host == "0.0.0.0":
+        _host = "localhost"
+    _port = PARAMS["serving"]["port"]
+    api_url = f"http://{_host}:{_port}/predict"
+
+    with st.form("predict_form"):
+        st.markdown("#### 👤 Customer Demographics")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            gender = st.selectbox("Gender", ["Male", "Female"])
+        with c2:
+            senior = st.selectbox("Senior Citizen", ["No", "Yes"])
+        with c3:
+            partner = st.selectbox("Partner", ["Yes", "No"])
+
+        c4, c5 = st.columns(2)
+        with c4:
+            dependents = st.selectbox("Dependents", ["No", "Yes"])
+        with c5:
+            tenure = st.slider("Tenure (months)", 0, 72, 12)
+
+        st.markdown("#### 📞 Services")
+        c6, c7, c8 = st.columns(3)
+        with c6:
+            phone_service = st.selectbox("Phone Service", ["Yes", "No"])
+            multiple_lines = st.selectbox(
+                "Multiple Lines", ["No", "Yes", "No phone service"]
+            )
+        with c7:
+            internet_service = st.selectbox(
+                "Internet Service", ["Fiber optic", "DSL", "No"]
+            )
+            online_security = st.selectbox(
+                "Online Security", ["No", "Yes", "No internet service"]
+            )
+        with c8:
+            online_backup = st.selectbox(
+                "Online Backup", ["Yes", "No", "No internet service"]
+            )
+            device_protection = st.selectbox(
+                "Device Protection", ["No", "Yes", "No internet service"]
+            )
+
+        c9, c10 = st.columns(2)
+        with c9:
+            tech_support = st.selectbox(
+                "Tech Support", ["No", "Yes", "No internet service"]
+            )
+            streaming_tv = st.selectbox(
+                "Streaming TV", ["No", "Yes", "No internet service"]
+            )
+        with c10:
+            streaming_movies = st.selectbox(
+                "Streaming Movies", ["No", "Yes", "No internet service"]
+            )
+
+        st.markdown("#### 💳 Billing & Contract")
+        c11, c12, c13 = st.columns(3)
+        with c11:
+            contract = st.selectbox(
+                "Contract", ["Month-to-month", "One year", "Two year"]
+            )
+        with c12:
+            paperless = st.selectbox("Paperless Billing", ["Yes", "No"])
+        with c13:
+            payment = st.selectbox(
+                "Payment Method",
+                [
+                    "Electronic check",
+                    "Mailed check",
+                    "Bank transfer (automatic)",
+                    "Credit card (automatic)",
+                ],
+            )
+
+        c14, c15 = st.columns(2)
+        with c14:
+            monthly_charges = st.slider(
+                "Monthly Charges ($)", 18.0, 120.0, 65.0, step=0.5
+            )
+        with c15:
+            total_charges = st.slider(
+                "Total Charges ($)", 0.0, 9000.0,
+                float(monthly_charges * tenure), step=10.0
+            )
+
+        submitted = st.form_submit_button(
+            "🚀 Run Prediction", use_container_width=True
+        )
+
+    if submitted:
+        payload = {
+            "gender": gender,
+            "SeniorCitizen": 1 if senior == "Yes" else 0,
+            "Partner": partner,
+            "Dependents": dependents,
+            "tenure": float(tenure),
+            "PhoneService": phone_service,
+            "MultipleLines": multiple_lines,
+            "InternetService": internet_service,
+            "OnlineSecurity": online_security,
+            "OnlineBackup": online_backup,
+            "DeviceProtection": device_protection,
+            "TechSupport": tech_support,
+            "StreamingTV": streaming_tv,
+            "StreamingMovies": streaming_movies,
+            "Contract": contract,
+            "PaperlessBilling": paperless,
+            "PaymentMethod": payment,
+            "MonthlyCharges": float(monthly_charges),
+            "TotalCharges": float(total_charges),
+        }
+
+        with st.spinner("Calling API..."):
+            try:
+                resp = requests.post(api_url, json=payload, timeout=5)
+                resp.raise_for_status()
+                result = resp.json()
+
+                pred = result.get("prediction", -1)
+                conf = result.get("confidence", 0.0)
+                label = result.get("label", "Unknown")
+
+                st.markdown("---")
+                st.markdown("### 🎯 Prediction Result")
+                res_col1, res_col2 = st.columns(2)
+
+                if pred == 1:
+                    res_col1.error(
+                        "**⚠️ CHURN RISK DETECTED**\n\n"
+                        "This customer is predicted to churn."
+                    )
+                else:
+                    res_col1.success(
+                        "**✅ LOW CHURN RISK**\n\n"
+                        "This customer is likely to stay."
+                    )
+
+                with res_col2:
+                    render_metric(
+                        "Model Confidence",
+                        f"{conf * 100:.1f}%",
+                        f"Raw label: {label}",
+                        color="magenta" if pred == 1 else "cyan",
+                    )
+
+                with st.expander("📤 Request Payload (sent to API)", expanded=False):
+                    st.json(payload)
+
+                with st.expander("📥 Raw API Response", expanded=False):
+                    st.json(result)
+
+            except requests.exceptions.ConnectionError:
+                st.error(
+                    f"❌ Could not reach the API at `{api_url}`.\n\n"
+                    "Make sure the FastAPI server is running:\n"
+                    "`uvicorn src.serving.app:app --host 0.0.0.0 --port 8000 --reload`"
+                )
+            except Exception as exc:
+                st.error(f"❌ API call failed: {exc}")
