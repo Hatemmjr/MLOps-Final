@@ -185,6 +185,7 @@ with st.sidebar:
             "📈 Model Performance",
             "📉 Data Drift",
             "💻 System Health",
+            "🧪 Live API Tester",
         ],
         label_visibility="collapsed",
     )
@@ -402,7 +403,7 @@ elif page.startswith("📊"):
             if "feature_monthly_charges" in metrics:
                 hist = metrics["feature_monthly_charges"].samples
                 buckets = {
-                    float(s.labels["le"]): s.value for s in hist if s.labels.get("le") != "+Inf"
+                    float(s.labels["le"]): s.value for s in hist if "le" in s.labels and s.labels["le"] != "+Inf"
                 }
                 if buckets:
                     le_keys = sorted(buckets.keys())
@@ -425,7 +426,7 @@ elif page.startswith("📊"):
             if "feature_tenure" in metrics:
                 hist = metrics["feature_tenure"].samples
                 buckets = {
-                    float(s.labels["le"]): s.value for s in hist if s.labels.get("le") != "+Inf"
+                    float(s.labels["le"]): s.value for s in hist if "le" in s.labels and s.labels["le"] != "+Inf"
                 }
                 if buckets:
                     le_keys = sorted(buckets.keys())

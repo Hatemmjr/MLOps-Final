@@ -244,6 +244,8 @@ def _predict_single(record: ChurnRecord) -> PredictionResponse:
                 preprocessor.transform(df),
                 columns=preprocessor.get_feature_names_out(),
             )
+            from src.data.feature_selection import drop_low_signal_single
+            df = drop_low_signal_single(df)
         except Exception as e:
             log.error("Preprocessing failed: %s", e)
             raise HTTPException(status_code=500, detail=f"Preprocessing error: {e}")
