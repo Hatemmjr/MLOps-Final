@@ -83,7 +83,13 @@ def train_fn(**context):
         run_logistic_regression,
         run_random_forest,
         run_gradient_boosting,
+        run_xgboost,
+        run_lightgbm,
+        run_stacking,
     )
+    from xgboost import XGBClassifier
+    from lightgbm import LGBMClassifier
+    from sklearn.ensemble import RandomForestClassifier
 
     with open("configs/params.yaml") as f:
         params = yaml.safe_load(f)
@@ -92,11 +98,42 @@ def train_fn(**context):
     mlflow.set_experiment(params["training"]["experiment_name"])
 
     X_train, y_train, X_test, y_test = load_splits(params)
-    run_ids = [
-        run_logistic_regression(X_train, y_train, X_test, y_test, params),
-        run_random_forest(X_train, y_train, X_test, y_test, params),
-        run_gradient_boosting(X_train, y_train, X_test, y_test, params),
-    ]
+    
+    # Feature selection
+    from src.data.feature_selection import drop_low_signal
+    X_train, X_test = drop_low_signal(X_train, X_test)
+
+    run_ids = []
+    run_ids.append(run_logistic_regression(X_train, y_train, X_test, y_test, params))
+    run_ids.append(run_random_forest(X_train, y_train, X_test, y_test, params))
+    run_ids.append(run_gradient_boosting(X_train, y_train, X_test, y_test, params))
+    
+    xgb_id = run_xgboost(X_train, y_train, X_test, y_test, params)
+    lgbm_id = run_lightgbm(X_train, y_train, X_test, y_test, params)
+    run_ids.extend([xgb_id, lgbm_id])
+    
+    seed = params["data"]["random_seed"]
+    neg, pos = int((y_train == 0).sum()), int((y_train == 1).sum())
+    spw = neg / max(pos, 1)
+
+    xgb_base = XGBClassifier(
+        n_estimators=300, learning_rate=0.05, max_depth=5,
+        scale_pos_weight=spw, random_state=seed, eval_metric="logloss", verbosity=0,
+    )
+    lgbm_base = LGBMClassifier(
+        n_estimators=300, learning_rate=0.05, max_depth=6,
+        scale_pos_weight=spw, random_state=seed, n_jobs=-1, verbosity=-1,
+    )
+    rf_base = RandomForestClassifier(
+        n_estimators=200, max_depth=10, class_weight="balanced",
+        random_state=seed, n_jobs=-1,
+    )
+    stack_id = run_stacking(
+        X_train, y_train, X_test, y_test, params,
+        xgb_base, lgbm_base, rf_base,
+    )
+    run_ids.append(stack_id)
+
     context["ti"].xcom_push(key="run_ids", value=run_ids)
     log.info("Training complete. Run IDs: %s", run_ids)
 
