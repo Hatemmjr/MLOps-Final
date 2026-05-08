@@ -71,6 +71,30 @@ services:
     networks:
       - mlops-net
 
+  # ── Streamlit Dashboard ─────────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow-server:5000
+      SERVING_HOST: telco-serving
+    volumes:
+      - ./configs:/app/configs:ro
+      - ./monitoring:/app/monitoring:ro
+      - ./mlartifacts:/app/mlartifacts:ro
+    command: ["streamlit", "run", "monitoring/dashboard.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    depends_on:
+      telco-serving:
+        condition: service_healthy
+      mlflow-server:
+        condition: service_healthy
+    networks:
+      - mlops-net
+
 networks:
   mlops-net:
     driver: bridge

@@ -195,8 +195,8 @@ with st.sidebar:
 # Helper: Fetch Prometheus
 # ─────────────────────────────────────────────────────────────────────────────
 def fetch_prometheus():
-    host = PARAMS["serving"]["host"]
-    if host == "0.0.0.0":
+    host = os.environ.get("SERVING_HOST", PARAMS["serving"]["host"])
+    if host == "0.0.0.0" and "SERVING_HOST" not in os.environ:
         host = "localhost"
     port = PARAMS["monitoring"]["prometheus_port"]
 
@@ -751,8 +751,8 @@ elif page.startswith("🧪"):
         "live churn verdict from the production `/predict` endpoint."
     )
 
-    _host = PARAMS["serving"]["host"]
-    if _host == "0.0.0.0":
+    _host = os.environ.get("SERVING_HOST", PARAMS["serving"]["host"])
+    if _host == "0.0.0.0" and "SERVING_HOST" not in os.environ:
         _host = "localhost"
     _port = PARAMS["serving"]["port"]
     api_url = f"http://{_host}:{_port}/predict"

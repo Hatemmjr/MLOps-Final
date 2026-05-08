@@ -28,6 +28,7 @@ RUN pip install --upgrade pip \
 # ── Copy application code ─────────────────────────────────────────────────────
 COPY configs/ configs/
 COPY src/ src/
+COPY monitoring/ monitoring/
 
 # ── Switch to non-root user ───────────────────────────────────────────────────
 USER appuser
