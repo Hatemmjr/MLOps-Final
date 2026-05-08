@@ -35,7 +35,7 @@ $MLFLOW server \
 MLFLOW_PID=$!
 echo "  MLflow PID: $MLFLOW_PID — waiting 5s for it to start..."
 sleep 5
-echo "  ✅ MLflow server is running at http://127.0.0.1:5000"
+echo "  MLflow server is running at http://127.0.0.1:5000"
 
 # ── Step 2: Data Preparation ──────────────────────────────────────────
 echo ""
@@ -46,7 +46,7 @@ echo "       coerces TotalCharges to float, handles nulls),"
 echo "       and writes data/processed/telco_churn_clean.csv"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 $PYTHON src/data/prepare.py
-echo "  ✅ Cleaned CSV written to data/processed/telco_churn_clean.csv"
+echo "  Cleaned CSV written to data/processed/telco_churn_clean.csv"
 
 # ── Step 3: Preprocessing Pipeline ───────────────────────────────────
 echo ""
@@ -59,7 +59,7 @@ echo "       - SMOTE to balance the imbalanced churn classes"
 echo "       Saves as data/processed/preprocessing_pipeline.joblib"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 $PYTHON src/data/preprocess.py
-echo "  ✅ Pipeline artifact saved to data/processed/preprocessing_pipeline.joblib"
+echo "  Pipeline artifact saved to data/processed/preprocessing_pipeline.joblib"
 
 # ── Step 4: Featurization ─────────────────────────────────────────────
 echo ""
@@ -72,7 +72,7 @@ echo "       - reference.csv  (monitoring baseline)"
 echo "       - production.csv (simulated live traffic for drift detection)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 $PYTHON src/features/featurize.py
-echo "  ✅ Data splits written to data/splits/"
+echo "  Data splits written to data/splits/"
 
 # ── Step 5: Model Training + HPO ─────────────────────────────────────
 echo ""
@@ -84,7 +84,7 @@ echo "       to MLflow, picks the best ROC-AUC model, and promotes it"
 echo "       through Staging → Production in the MLflow Model Registry."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 $PYTHON src/training/train.py
-echo "  ✅ Best model registered and promoted to Production"
+echo "  Best model registered and promoted to Production"
 
 # ── Step 6: Model Evaluation ─────────────────────────────────────────
 echo ""
@@ -95,7 +95,7 @@ echo "       the held-out test set, and enforces CI gates:"
 echo "       accuracy >= 0.50 and roc_auc >= 0.50"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 $PYTHON src/evaluation/evaluate.py
-echo "  ✅ Model passed all performance thresholds"
+echo "  Model passed all performance thresholds"
 
 # ── Step 7: Monitoring + Drift Detection ─────────────────────────────
 echo ""
@@ -106,7 +106,7 @@ echo "       generates HTML reports, checks >20% drift threshold,"
 echo "       and writes 5 custom Prometheus metrics to a .prom file."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 $PYTHON monitoring/run_monitoring.py
-echo "  ✅ Evidently reports saved to monitoring/evidently_reports/"
+echo "  Evidently reports saved to monitoring/evidently_reports/"
 
 # ── Step 8: Test Suite ────────────────────────────────────────────────
 echo ""
@@ -124,7 +124,7 @@ echo ""
 # ── Summary ───────────────────────────────────────────────────────────
 echo ""
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║              ✅ PIPELINE COMPLETE                            ║"
+echo "║              PIPELINE COMPLETE                            ║"
 echo "╠══════════════════════════════════════════════════════════════╣"
 echo "║  MLflow UI  →  http://127.0.0.1:5000                        ║"
 echo "║  Reports    →  monitoring/evidently_reports/                 ║"

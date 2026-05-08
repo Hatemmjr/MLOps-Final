@@ -32,7 +32,7 @@ echo -e "\n7. Running Pytest Suite (Unit and API tests)..."
 pytest tests/
 
 echo -e "\n======================================"
-echo "✅ Pipeline Executed Successfully!"
+echo "Pipeline Executed Successfully!"
 echo "======================================"
 
 echo "Cleaning up MLflow background process..."
