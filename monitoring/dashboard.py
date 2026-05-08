@@ -403,7 +403,9 @@ elif page.startswith("📊"):
             if "feature_monthly_charges" in metrics:
                 hist = metrics["feature_monthly_charges"].samples
                 buckets = {
-                    float(s.labels["le"]): s.value for s in hist if "le" in s.labels and s.labels["le"] != "+Inf"
+                    float(s.labels["le"]): s.value
+                    for s in hist
+                    if "le" in s.labels and s.labels["le"] != "+Inf"
                 }
                 if buckets:
                     le_keys = sorted(buckets.keys())
@@ -426,7 +428,9 @@ elif page.startswith("📊"):
             if "feature_tenure" in metrics:
                 hist = metrics["feature_tenure"].samples
                 buckets = {
-                    float(s.labels["le"]): s.value for s in hist if "le" in s.labels and s.labels["le"] != "+Inf"
+                    float(s.labels["le"]): s.value
+                    for s in hist
+                    if "le" in s.labels and s.labels["le"] != "+Inf"
                 }
                 if buckets:
                     le_keys = sorted(buckets.keys())
@@ -773,32 +777,20 @@ elif page.startswith("🧪"):
         c6, c7, c8 = st.columns(3)
         with c6:
             phone_service = st.selectbox("Phone Service", ["Yes", "No"])
-            multiple_lines = st.selectbox(
-                "Multiple Lines", ["No", "Yes", "No phone service"]
-            )
+            multiple_lines = st.selectbox("Multiple Lines", ["No", "Yes", "No phone service"])
         with c7:
-            internet_service = st.selectbox(
-                "Internet Service", ["Fiber optic", "DSL", "No"]
-            )
-            online_security = st.selectbox(
-                "Online Security", ["No", "Yes", "No internet service"]
-            )
+            internet_service = st.selectbox("Internet Service", ["Fiber optic", "DSL", "No"])
+            online_security = st.selectbox("Online Security", ["No", "Yes", "No internet service"])
         with c8:
-            online_backup = st.selectbox(
-                "Online Backup", ["Yes", "No", "No internet service"]
-            )
+            online_backup = st.selectbox("Online Backup", ["Yes", "No", "No internet service"])
             device_protection = st.selectbox(
                 "Device Protection", ["No", "Yes", "No internet service"]
             )
 
         c9, c10 = st.columns(2)
         with c9:
-            tech_support = st.selectbox(
-                "Tech Support", ["No", "Yes", "No internet service"]
-            )
-            streaming_tv = st.selectbox(
-                "Streaming TV", ["No", "Yes", "No internet service"]
-            )
+            tech_support = st.selectbox("Tech Support", ["No", "Yes", "No internet service"])
+            streaming_tv = st.selectbox("Streaming TV", ["No", "Yes", "No internet service"])
         with c10:
             streaming_movies = st.selectbox(
                 "Streaming Movies", ["No", "Yes", "No internet service"]
@@ -807,9 +799,7 @@ elif page.startswith("🧪"):
         st.markdown("#### 💳 Billing & Contract")
         c11, c12, c13 = st.columns(3)
         with c11:
-            contract = st.selectbox(
-                "Contract", ["Month-to-month", "One year", "Two year"]
-            )
+            contract = st.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
         with c12:
             paperless = st.selectbox("Paperless Billing", ["Yes", "No"])
         with c13:
@@ -825,18 +815,13 @@ elif page.startswith("🧪"):
 
         c14, c15 = st.columns(2)
         with c14:
-            monthly_charges = st.slider(
-                "Monthly Charges ($)", 18.0, 120.0, 65.0, step=0.5
-            )
+            monthly_charges = st.slider("Monthly Charges ($)", 18.0, 120.0, 65.0, step=0.5)
         with c15:
             total_charges = st.slider(
-                "Total Charges ($)", 0.0, 9000.0,
-                float(monthly_charges * tenure), step=10.0
+                "Total Charges ($)", 0.0, 9000.0, float(monthly_charges * tenure), step=10.0
             )
 
-        submitted = st.form_submit_button(
-            "🚀 Run Prediction", use_container_width=True
-        )
+        submitted = st.form_submit_button("🚀 Run Prediction", use_container_width=True)
 
     if submitted:
         payload = {
@@ -877,14 +862,10 @@ elif page.startswith("🧪"):
 
                 if pred == 1:
                     res_col1.error(
-                        "**⚠️ CHURN RISK DETECTED**\n\n"
-                        "This customer is predicted to churn."
+                        "**⚠️ CHURN RISK DETECTED**\n\n" "This customer is predicted to churn."
                     )
                 else:
-                    res_col1.success(
-                        "**✅ LOW CHURN RISK**\n\n"
-                        "This customer is likely to stay."
-                    )
+                    res_col1.success("**✅ LOW CHURN RISK**\n\n" "This customer is likely to stay.")
 
                 with res_col2:
                     render_metric(
