@@ -57,8 +57,12 @@ TENURE_HISTOGRAM = Histogram(
 MODEL_VERSION_GAUGE = Gauge("model_version", "Current model version in production")
 INFERENCE_COUNTER = Counter(
     "inference_count",
-    "Number of inference requests by predicted class",
     ["predicted_class"],
+)
+API_LATENCY_HISTOGRAM = Histogram(
+    "api_latency_seconds",
+    "API Request Latency in seconds",
+    ["endpoint"],
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -87,7 +91,8 @@ def _load_preprocessor() -> None:
         log.info("Preprocessing pipeline loaded from %s", pipeline_path)
     else:
         log.warning(
-            "Preprocessing pipeline not found at %s — " "raw features will be passed directly.",
+            "Preprocessing pipeline not found at %s — "
+            "raw features will be passed directly.",
             pipeline_path,
         )
 
@@ -216,6 +221,17 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def prometheus_latency_middleware(request, call_next):
+    import time
+
+    start_time = time.time()
+    response = await call_next(request)
+    duration = time.time() - start_time
+    API_LATENCY_HISTOGRAM.labels(endpoint=request.url.path).observe(duration)
+    return response
 
 
 # ─────────────────────────────────────────────────────────────────────────────

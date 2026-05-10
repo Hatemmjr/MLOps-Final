@@ -18,6 +18,7 @@ import plotly.io as pio
 import psutil
 import requests
 import streamlit as st
+import time
 import streamlit.components.v1 as components
 from mlflow.tracking import MlflowClient
 from prometheus_client.parser import text_string_to_metric_families
@@ -59,11 +60,11 @@ CUSTOM_CSS = """
         border-right: 1px solid #e0e0e0;
     }
 
-    /* Custom Vodafone Metric Cards */
+    /* Custom Metric Cards */
     .glass-metric {
         background: #ffffff;
         border: 1px solid #e0e0e0;
-        border-top: 3px solid #E60000; /* Vodafone Red */
+        border-top: 3px solid #E60000; /* Red */
         border-radius: 8px;
         padding: 20px;
         margin-bottom: 20px;
@@ -175,7 +176,9 @@ pio.templates.default = "plotly_white"
 # ─────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("<h1>Telco Churn Dashboard</h1>", unsafe_allow_html=True)
-    st.markdown("<hr style='border-color:rgba(255,255,255,0.1);'/>", unsafe_allow_html=True)
+    st.markdown(
+        "<hr style='border-color:rgba(255,255,255,0.1);'/>", unsafe_allow_html=True
+    )
 
     page = st.radio(
         "Navigation",
@@ -229,9 +232,9 @@ if page.startswith("🚀"):
     if exp:
         runs = client.search_runs(exp.experiment_id)
         if runs:
-            best_auc = max(runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0)).data.metrics.get(
-                "roc_auc", 0.0
-            )
+            best_auc = max(
+                runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0)
+            ).data.metrics.get("roc_auc", 0.0)
 
     with col1:
         render_metric("Prod Model AUC", f"{best_auc:.4f}", "Latest version in Registry")
@@ -240,7 +243,9 @@ if page.startswith("🚀"):
     churn_cnt, nochurn_cnt = 0, 0
     if "inference_count" in metrics:
         count_metrics = metrics["inference_count"].samples
-        churn_cnt = sum([s.value for s in count_metrics if s.labels.get("predicted_class") == "1"])
+        churn_cnt = sum(
+            [s.value for s in count_metrics if s.labels.get("predicted_class") == "1"]
+        )
         nochurn_cnt = sum(
             [s.value for s in count_metrics if s.labels.get("predicted_class") == "0"]
         )
@@ -255,7 +260,9 @@ if page.startswith("🚀"):
 
     # CPU Usage
     with col3:
-        render_metric("System CPU", f"{psutil.cpu_percent()}%", "Host Server Utilization")
+        render_metric(
+            "System CPU", f"{psutil.cpu_percent()}%", "Host Server Utilization"
+        )
 
     # Drift
     drift_status = "0.0%"
@@ -267,7 +274,10 @@ if page.startswith("🚀"):
                 drift_status = f"{logs[-1]['drift_fraction']*100:.1f}%"
     with col4:
         render_metric(
-            "Current Drift", drift_status, "Features exceeding threshold", color="magenta"
+            "Current Drift",
+            drift_status,
+            "Features exceeding threshold",
+            color="magenta",
         )
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -295,18 +305,23 @@ if page.startswith("🚀"):
 
                 tp = int(len(actual_churners) * recall)
                 predicted = int(tp / precision)
-                revenue_saved = tp * actual_churners["TotalCharges"].mean() * success_rate
+                revenue_saved = (
+                    tp * actual_churners["TotalCharges"].mean() * success_rate
+                )
                 net_roi = revenue_saved - (predicted * cost)
 
                 render_metric(
-                    "Net ROI", f"${net_roi:,.0f}", f"Assuming {success_rate*100}% retention"
+                    "Net ROI",
+                    f"${net_roi:,.0f}",
+                    f"Assuming {success_rate*100}% retention",
                 )
 
             with c2:
                 # Plot ROI sensitivity
                 rates = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
                 rois = [
-                    (tp * actual_churners["TotalCharges"].mean() * r) - (predicted * cost)
+                    (tp * actual_churners["TotalCharges"].mean() * r)
+                    - (predicted * cost)
                     for r in rates
                 ]
                 fig = px.area(
@@ -317,7 +332,8 @@ if page.startswith("🚀"):
                     color_discrete_sequence=["#E60000"],
                 )
                 fig.update_layout(
-                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                    plot_bgcolor="rgba(255,255,255,0)",
+                    paper_bgcolor="rgba(255,255,255,0)",
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -344,7 +360,8 @@ elif page.startswith("📊"):
                     color_continuous_scale=["#E60000", "#333333"],
                 )
                 fig.update_layout(
-                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                    plot_bgcolor="rgba(255,255,255,0)",
+                    paper_bgcolor="rgba(255,255,255,0)",
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -378,7 +395,8 @@ elif page.startswith("📊"):
                     color_discrete_sequence=["#E60000", "#333333"],
                 )
                 fig_box.update_layout(
-                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                    plot_bgcolor="rgba(255,255,255,0)",
+                    paper_bgcolor="rgba(255,255,255,0)",
                 )
                 st.plotly_chart(fig_box, use_container_width=True)
         with c4:
@@ -392,7 +410,8 @@ elif page.startswith("📊"):
                     color_continuous_scale="Reds",
                 )
                 fig_corr.update_layout(
-                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                    plot_bgcolor="rgba(255,255,255,0)",
+                    paper_bgcolor="rgba(255,255,255,0)",
                 )
                 st.plotly_chart(fig_corr, use_container_width=True)
 
@@ -421,7 +440,8 @@ elif page.startswith("📊"):
                         color_discrete_sequence=["#333333"],
                     )
                     fig3.update_layout(
-                        plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                        plot_bgcolor="rgba(255,255,255,0)",
+                        paper_bgcolor="rgba(255,255,255,0)",
                     )
                     st.plotly_chart(fig3, use_container_width=True)
 
@@ -446,7 +466,8 @@ elif page.startswith("📊"):
                         color_discrete_sequence=["#E60000"],
                     )
                     fig4.update_layout(
-                        plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                        plot_bgcolor="rgba(255,255,255,0)",
+                        paper_bgcolor="rgba(255,255,255,0)",
                     )
                     st.plotly_chart(fig4, use_container_width=True)
 
@@ -462,7 +483,9 @@ elif page.startswith("🔬"):
         if runs:
             data = []
             for r in runs:
-                name = r.data.tags.get("mlflow.runName", "unnamed").split("-")[0].title()
+                name = (
+                    r.data.tags.get("mlflow.runName", "unnamed").split("-")[0].title()
+                )
                 data.append(
                     {
                         "Model": name,
@@ -474,13 +497,15 @@ elif page.startswith("🔬"):
                 )
 
             df_runs = pd.DataFrame(data)
-            best_models = df_runs.loc[df_runs.groupby("Model")["AUC"].idxmax()].reset_index(
-                drop=True
-            )
+            best_models = df_runs.loc[
+                df_runs.groupby("Model")["AUC"].idxmax()
+            ].reset_index(drop=True)
 
             c1, c2 = st.columns(2)
             with c1:
-                df_melt = best_models.melt(id_vars="Model", var_name="Metric", value_name="Score")
+                df_melt = best_models.melt(
+                    id_vars="Model", var_name="Metric", value_name="Score"
+                )
                 fig_bar = px.bar(
                     df_melt,
                     x="Model",
@@ -488,17 +513,30 @@ elif page.startswith("🔬"):
                     color="Metric",
                     barmode="group",
                     title="Best Models by Metric",
-                    color_discrete_sequence=["#E60000", "#333333", "#666666", "#999999"],
+                    color_discrete_sequence=[
+                        "#E60000",
+                        "#333333",
+                        "#666666",
+                        "#999999",
+                    ],
                 )
                 fig_bar.update_layout(
-                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                    plot_bgcolor="rgba(255,255,255,0)",
+                    paper_bgcolor="rgba(255,255,255,0)",
                 )
                 st.plotly_chart(fig_bar, use_container_width=True)
 
             with c2:
                 categories = ["AUC", "F1", "Recall", "Precision"]
                 fig_radar = go.Figure()
-                colors = ["#E60000", "#333333", "#666666", "#999999", "#CCCCCC", "#000000"]
+                colors = [
+                    "#E60000",
+                    "#333333",
+                    "#666666",
+                    "#999999",
+                    "#CCCCCC",
+                    "#000000",
+                ]
                 for i, row in best_models.iterrows():
                     fig_radar.add_trace(
                         go.Scatterpolar(
@@ -575,9 +613,11 @@ elif page.startswith("📈"):
                 best = df_runs.loc[df_runs["AUC"].idxmax()]
                 render_metric("Best AUC", f"{best['AUC']:.4f}", f"Run: {best['Name']}")
                 render_metric(
-                    "Best F1", f"{best['F1']:.4f}", "Post-threshold tuning", color="magenta"
+                    "Best F1", f"{best['F1']:.4f}", "Best F-1 Score", color="magenta"
                 )
-                render_metric("Best Recall", f"{best['Recall']:.4f}", "Catching churners")
+                render_metric(
+                    "Best Recall", f"{best['Recall']:.4f}", "Catching churners"
+                )
 
                 st.markdown("### Simulated Confusion Matrix")
                 p = best["Precision"]
@@ -597,7 +637,8 @@ elif page.startswith("📈"):
                     title="Estimated Matrix (1000 samples)",
                 )
                 fig_cm.update_layout(
-                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                    plot_bgcolor="rgba(255,255,255,0)",
+                    paper_bgcolor="rgba(255,255,255,0)",
                 )
                 st.plotly_chart(fig_cm, use_container_width=True)
 
@@ -605,7 +646,9 @@ elif page.startswith("📈"):
             st.markdown("### Global Feature Importance")
             try:
                 # Get the actual model artifact path from the best run
-                best_run_obj = max(runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0))
+                best_run_obj = max(
+                    runs, key=lambda r: r.data.metrics.get("roc_auc", 0.0)
+                )
                 model_uri = f"runs:/{best_run_obj.info.run_id}/model"
                 loaded_model = mlflow.sklearn.load_model(model_uri)
 
@@ -673,7 +716,8 @@ elif page.startswith("📉"):
                     annotation_text="Alert Threshold",
                 )
                 fig.update_layout(
-                    plot_bgcolor="rgba(255,255,255,0)", paper_bgcolor="rgba(255,255,255,0)"
+                    plot_bgcolor="rgba(255,255,255,0)",
+                    paper_bgcolor="rgba(255,255,255,0)",
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -696,12 +740,38 @@ elif page.startswith("📉"):
 elif page.startswith("💻"):
     st.title("System Health & Controls")
 
-    c1, c2, c3 = st.columns(3)
+    metrics = fetch_prometheus()
+
+    latency_text = "N/A"
+    uptime_text = "N/A"
+
+    if "api_latency_seconds" in metrics:
+        s_count = 0
+        s_sum = 0
+        for sample in metrics["api_latency_seconds"].samples:
+            if "predict" in sample.labels.get("endpoint", ""):
+                if sample.name.endswith("_sum"):
+                    s_sum += sample.value
+                elif sample.name.endswith("_count"):
+                    s_count += sample.value
+        if s_count > 0:
+            latency_text = f"{(s_sum/s_count)*1000:.1f} ms"
+
+    if "process_start_time_seconds" in metrics:
+        start_time = metrics["process_start_time_seconds"].samples[0].value
+        uptime_sec = int(time.time() - start_time)
+        hrs, rem = divmod(uptime_sec, 3600)
+        mins, secs = divmod(rem, 60)
+        uptime_text = f"{hrs}h {mins}m {secs}s"
+
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("CPU Utilization", f"{psutil.cpu_percent(interval=1)}%")
     mem = psutil.virtual_memory()
-    c2.metric("Memory Usage", f"{mem.percent}% ({mem.used / (1024**3):.1f} GB)")
+    c2.metric("Memory Usage", f"{mem.percent}%")
     disk = psutil.disk_usage("/")
-    c3.metric("Disk Storage", f"{disk.percent}% ({disk.free / (1024**3):.1f} GB Free)")
+    c3.metric("Disk Storage", f"{disk.percent}%")
+    c4.metric("Avg API Latency", latency_text)
+    c5.metric("API Uptime", uptime_text)
 
     st.divider()
 
@@ -778,20 +848,32 @@ elif page.startswith("🧪"):
         c6, c7, c8 = st.columns(3)
         with c6:
             phone_service = st.selectbox("Phone Service", ["Yes", "No"])
-            multiple_lines = st.selectbox("Multiple Lines", ["No", "Yes", "No phone service"])
+            multiple_lines = st.selectbox(
+                "Multiple Lines", ["No", "Yes", "No phone service"]
+            )
         with c7:
-            internet_service = st.selectbox("Internet Service", ["Fiber optic", "DSL", "No"])
-            online_security = st.selectbox("Online Security", ["No", "Yes", "No internet service"])
+            internet_service = st.selectbox(
+                "Internet Service", ["Fiber optic", "DSL", "No"]
+            )
+            online_security = st.selectbox(
+                "Online Security", ["No", "Yes", "No internet service"]
+            )
         with c8:
-            online_backup = st.selectbox("Online Backup", ["Yes", "No", "No internet service"])
+            online_backup = st.selectbox(
+                "Online Backup", ["Yes", "No", "No internet service"]
+            )
             device_protection = st.selectbox(
                 "Device Protection", ["No", "Yes", "No internet service"]
             )
 
         c9, c10 = st.columns(2)
         with c9:
-            tech_support = st.selectbox("Tech Support", ["No", "Yes", "No internet service"])
-            streaming_tv = st.selectbox("Streaming TV", ["No", "Yes", "No internet service"])
+            tech_support = st.selectbox(
+                "Tech Support", ["No", "Yes", "No internet service"]
+            )
+            streaming_tv = st.selectbox(
+                "Streaming TV", ["No", "Yes", "No internet service"]
+            )
         with c10:
             streaming_movies = st.selectbox(
                 "Streaming Movies", ["No", "Yes", "No internet service"]
@@ -800,7 +882,9 @@ elif page.startswith("🧪"):
         st.markdown("#### 💳 Billing & Contract")
         c11, c12, c13 = st.columns(3)
         with c11:
-            contract = st.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
+            contract = st.selectbox(
+                "Contract", ["Month-to-month", "One year", "Two year"]
+            )
         with c12:
             paperless = st.selectbox("Paperless Billing", ["Yes", "No"])
         with c13:
@@ -816,10 +900,16 @@ elif page.startswith("🧪"):
 
         c14, c15 = st.columns(2)
         with c14:
-            monthly_charges = st.slider("Monthly Charges ($)", 18.0, 120.0, 65.0, step=0.5)
+            monthly_charges = st.slider(
+                "Monthly Charges ($)", 18.0, 120.0, 65.0, step=0.5
+            )
         with c15:
             total_charges = st.slider(
-                "Total Charges ($)", 0.0, 9000.0, float(monthly_charges * tenure), step=10.0
+                "Total Charges ($)",
+                0.0,
+                9000.0,
+                float(monthly_charges * tenure),
+                step=10.0,
             )
 
         submitted = st.form_submit_button("🚀 Run Prediction", use_container_width=True)
@@ -863,10 +953,13 @@ elif page.startswith("🧪"):
 
                 if pred == 1:
                     res_col1.error(
-                        "**⚠️ CHURN RISK DETECTED**\n\n" "This customer is predicted to churn."
+                        "**⚠️ CHURN RISK DETECTED**\n\n"
+                        "This customer is predicted to churn."
                     )
                 else:
-                    res_col1.success("**✅ LOW CHURN RISK**\n\n" "This customer is likely to stay.")
+                    res_col1.success(
+                        "**✅ LOW CHURN RISK**\n\n" "This customer is likely to stay."
+                    )
 
                 with res_col2:
                     render_metric(
