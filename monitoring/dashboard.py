@@ -757,8 +757,8 @@ elif page.startswith("💻"):
         if s_count > 0:
             latency_text = f"{(s_sum/s_count)*1000:.1f} ms"
 
-    if "process_start_time_seconds" in metrics:
-        start_time = metrics["process_start_time_seconds"].samples[0].value
+    if "server_start_time_seconds" in metrics:
+        start_time = metrics["server_start_time_seconds"].samples[0].value
         uptime_sec = int(time.time() - start_time)
         hrs, rem = divmod(uptime_sec, 3600)
         mins, secs = divmod(rem, 60)

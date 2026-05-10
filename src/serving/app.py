@@ -65,6 +65,10 @@ API_LATENCY_HISTOGRAM = Histogram(
     "API Request Latency in seconds",
     ["endpoint"],
 )
+SERVER_START_TIME = Gauge(
+    "server_start_time_seconds", 
+    "Unix timestamp of when the server started"
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Global model state
@@ -211,6 +215,9 @@ async def lifespan(app: FastAPI):
         log.info("Prometheus metrics available on port %d", prom_port)
     except Exception as e:
         log.warning("Could not start Prometheus server: %s", e)
+
+    import time
+    SERVER_START_TIME.set(time.time())
 
     yield
     log.info("Shutting down model server.")
