@@ -57,6 +57,7 @@ TENURE_HISTOGRAM = Histogram(
 MODEL_VERSION_GAUGE = Gauge("model_version", "Current model version in production")
 INFERENCE_COUNTER = Counter(
     "inference_count",
+    "Number of inference requests by predicted class",
     ["predicted_class"],
 )
 API_LATENCY_HISTOGRAM = Histogram(
